@@ -1,0 +1,34 @@
+# Build products and generated Xcode files
+.build/
+build/
+DerivedData/
+/Bob.xcodeproj/
+/Bob/Info.plist
+.swiftpm/
+*.xcresult/
+*.xcarchive/
+*.ipa
+
+# Personal Xcode state and signing material
+*.xcuserstate
+xcuserdata/
+*.mobileprovision
+*.provisionprofile
+*.p12
+*.p8
+*.pem
+*.key
+*.cer
+*.xcconfig.local
+
+# Secrets and local tooling
+.env
+.env.*
+!.env.example
+.unlazy/
+.unlazy-hook-state.json
+.claude/settings.local.json
+/GATES.md
+/PLAN.md
+.DS_Store
+output/

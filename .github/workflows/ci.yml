@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Build and test
+    runs-on: macos-26
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - name: Install development tools
+        run: brew install xcodegen actionlint gitleaks
+      - name: Record toolchain
+        run: |
+          xcodebuild -version
+          xcrun swift --version
+          xcodegen --version
+          node --version
+      - name: Validate repository and workflow
+        run: |
+          actionlint
+          node scripts/verify-repository.mjs
+          git diff --check
+      - name: Scan Git history for secrets
+        run: gitleaks git --redact --no-banner
+      - name: Run logic tests
+        run: |
+          mkdir -p build
+          swift test 2>&1 | tee build/logic-tests.log
+      - name: Build for simulator
+        run: node scripts/verify.mjs build
+      - name: Check local processing boundaries
+        run: node scripts/verify.mjs privacy
+      - name: Build for iPhone without signing
+        run: node scripts/verify.mjs device-build
+      - name: Run simulator UI flows
+        run: |
+          BOB_SIMULATOR_UDID="$(xcrun simctl create 'Bob CI' com.apple.CoreSimulator.SimDeviceType.iPhone-17 com.apple.CoreSimulator.SimRuntime.iOS-26-5)"
+          export BOB_SIMULATOR_UDID
+          node scripts/verify.mjs ui
+      - name: Retain diagnostic logs
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: verification-results
+          path: |
+            build/*.log
+            build/UITests.xcresult
+          if-no-files-found: ignore
+          retention-days: 7
