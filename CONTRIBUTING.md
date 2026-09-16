@@ -48,6 +48,15 @@ For a focused planning adapter compilation check:
 sh Tests/BobPlanTests/.support/verify-native.sh
 ```
 
+For illustrated mascot fidelity, install Pillow 12.3 or later in a development Python environment, then run:
+
+```sh
+python3 scripts/prepare-bob-art.py --check
+```
+
+This checks the bundled cutouts against the approved drawings without modifying them.
+The standard build commands also verify that all three transparent poses are present in the compiled app.
+
 For repository hygiene, documentation links, workflow syntax, and secret scanning:
 
 ```sh

@@ -11,12 +11,12 @@ struct PlanCard: View {
     }
 
     var body: some View {
-        BobPanel {
+        VStack(alignment: .leading, spacing: 20) {
             VStack(alignment: .leading, spacing: 6) {
                 Text(title).font(.title3.bold()).accessibilityAddTraits(.isHeader)
                 Text("Confirmed \(plan.confirmedAt.formatted(date: .abbreviated, time: .shortened))")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(BobTheme.secondaryText)
                     .accessibilityIdentifier("plan.confirmedDate")
             }
             if !plan.reason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -34,7 +34,7 @@ struct PlanCard: View {
             if !plan.originalIntent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 DisclosureGroup {
                     Text(plan.originalIntent)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(BobTheme.secondaryText)
                         .textSelection(.enabled)
                         .padding(.top, 8)
                 } label: {
@@ -42,6 +42,7 @@ struct PlanCard: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func steps(_ values: [String], startingAt number: Int) -> some View {

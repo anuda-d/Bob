@@ -68,31 +68,28 @@ private struct WelcomeView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 26) {
-                ModelErrorView(model: model)
-                BobPortrait(size: 220)
+            VStack(alignment: .leading, spacing: 0) {
+                BobPortrait(size: 248)
                     .frame(maxWidth: .infinity)
                     .padding(.top, 24)
-                VStack(alignment: .leading, spacing: 12) {
+                    .offset(y: 6)
+                    .background(BobTheme.header.ignoresSafeArea(edges: .top))
+                VStack(alignment: .leading, spacing: 24) {
+                    ModelErrorView(model: model)
                     Text("Meet Bob.")
                         .font(.largeTitle.bold())
                         .accessibilityAddTraits(.isHeader)
-                    Text("A little company for tonight.\nA small nudge for tomorrow.")
+                    Text("A plan before bed.\nA challenge when you wake.")
                         .font(.title3)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(BobTheme.secondaryText)
+                    Text("Your plans stay on your iPhone.")
+                        .font(.footnote)
+                        .foregroundStyle(BobTheme.secondaryText)
                 }
-                BobPanel {
-                    Label("Leave a plan before bed", systemImage: "moon")
-                    Label("Wake up to one chosen challenge", systemImage: "sun.max")
-                    Label("Keep your intentions close", systemImage: "text.book.closed")
-                }
-                Text("All on your iPhone. Bob is a homebody.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                .padding(24)
+                .frame(maxWidth: 600, alignment: .leading)
+                .frame(maxWidth: .infinity)
             }
-            .padding(24)
-            .frame(maxWidth: 600)
-            .frame(maxWidth: .infinity)
         }
         .safeAreaInset(edge: .bottom) {
             Button("Set up my morning", action: onStart)
@@ -104,5 +101,7 @@ private struct WelcomeView: View {
         .bobScreen()
         .navigationTitle("Bob")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(BobTheme.header, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
     }
 }

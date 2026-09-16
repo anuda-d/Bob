@@ -69,10 +69,16 @@ Only successful verification advances the challenge.
 
 Root entry point is `RootView(model: AppModel)`.
 Create cohesive native screens: brief welcome, alarm settings with relevant challenge configuration, home with next alarm/readiness and compact plan, night preparation with editable confirmation, morning challenge and completed state.
-Use system adaptive off-white/off-black surfaces and muted green accent, rounded system font, consistent 20-point panel corners and 14-point controls, native controls and SF Symbols.
+Use adaptive off-white/forest-charcoal surfaces, a muted green accent, standard system typography, and 8-point custom controls.
+Home and welcome use a sage/forest header; home places the alarm beside Bob and stacks them at larger Dynamic Type sizes.
+Group content with space and section rules, not rounded cards.
+System controls and SF Symbols retain their native geometry and behavior.
 No external dependencies, no hand-drawn icons, no website layouts.
-Bundled artwork is `Image("Bob")` in Assets.xcassets, a transparent sleepy scruffy green monster.
-Use lightweight scale/opacity feedback only; respect reduced motion and Dynamic Type.
+BobPortrait uses held illustrated poses: Resting for home/welcome, Listening during preparation and active mornings, and Pleased after a plan or challenge is confirmed.
+Keep the approved Resting face and original concept sheet unchanged.
+No idle loops, character morphing, or game-style interface elements.
+Use lightweight button scale/opacity feedback only; respect reduced motion and Dynamic Type.
+Remove decorative captions; retain functional instructions, dated plans, permission states, and recovery messages.
 Make fallback immediately reachable without proof of camera failure.
 Camera permission denied is recoverable using the fallback.
 Alarm permission denied is a visible readiness failure.

@@ -31,14 +31,11 @@ struct AlarmSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text(isSetup ? "One morning. One small start." : "Make room for your kind of morning.")
-                    .font(.title2.bold())
-                    .accessibilityAddTraits(.isHeader)
                 ModelErrorView(model: model)
                 timePanel
                 challengePanel
                 if draft.challenge.kind != .puzzle { fallbackPanel }
-                BobPanel { AlarmReadinessView(model: model) }
+                BobSection { AlarmReadinessView(model: model) }
                 if !isSetup {
                     Button("Remove alarm", role: .destructive) { confirmingDelete = true }
                         .frame(maxWidth: .infinity, minHeight: 44)
@@ -101,7 +98,7 @@ struct AlarmSettingsView: View {
     }
 
     private var timePanel: some View {
-        BobPanel {
+        BobSection {
             Text("Wake-up time").font(.headline).accessibilityAddTraits(.isHeader)
             if dynamicTypeSize.isAccessibilitySize {
                 VStack(spacing: 16) { hourPicker; minutePicker }
@@ -110,7 +107,7 @@ struct AlarmSettingsView: View {
             }
             Text("24-hour time, in your iPhone's current time zone.")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(BobTheme.secondaryText)
             Divider()
             NavigationLink {
                 RepeatingDaysView(days: $draft.weekdays)
@@ -118,7 +115,7 @@ struct AlarmSettingsView: View {
                 HStack(spacing: 12) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Repeat").foregroundStyle(.primary)
-                        Text(BobCopy.repeatDays(draft.weekdays)).foregroundStyle(.secondary)
+                        Text(BobCopy.repeatDays(draft.weekdays)).foregroundStyle(BobTheme.secondaryText)
                     }
                     .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                     Image(systemName: "chevron.right").foregroundStyle(.tertiary).accessibilityHidden(true)
@@ -128,7 +125,7 @@ struct AlarmSettingsView: View {
             if draft.weekdays.isEmpty {
                 Text("No repeat days: ring once at the next selected time.")
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(BobTheme.secondaryText)
             }
             Divider()
             Toggle("Alarm enabled", isOn: $draft.enabled)
@@ -139,7 +136,7 @@ struct AlarmSettingsView: View {
 
     private var hourPicker: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Hour").font(.subheadline).foregroundStyle(.secondary)
+            Text("Hour").font(.subheadline).foregroundStyle(BobTheme.secondaryText)
             Picker("Hour, 24-hour time", selection: $draft.hour) {
                 ForEach(0..<24, id: \.self) { Text(String(format: "%02d", $0)).tag($0) }
             }
@@ -155,7 +152,7 @@ struct AlarmSettingsView: View {
 
     private var minutePicker: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Minute").font(.subheadline).foregroundStyle(.secondary)
+            Text("Minute").font(.subheadline).foregroundStyle(BobTheme.secondaryText)
             Picker("Minute", selection: $draft.minute) {
                 ForEach(0..<60, id: \.self) { Text(String(format: "%02d", $0)).tag($0) }
             }
@@ -170,7 +167,7 @@ struct AlarmSettingsView: View {
     }
 
     private var challengePanel: some View {
-        BobPanel {
+        BobSection {
             Text("Your wake-up challenge").font(.headline).accessibilityAddTraits(.isHeader)
             Picker("Challenge", selection: $draft.challenge.kind) {
                 Text("Pushups").tag(ChallengeKind.pushups)
@@ -187,7 +184,7 @@ struct AlarmSettingsView: View {
                           symbol: BobCopy.symbol(.pushups))
                 Text("No video is saved. Set the phone where it can see your full body from the side.")
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(BobTheme.secondaryText)
             case .puzzle:
                 DifficultyPicker(title: "Difficulty", selection: $draft.challenge.difficulty,
                                  identifier: "alarm.difficulty")
@@ -206,18 +203,18 @@ struct AlarmSettingsView: View {
                 if needsCode {
                     Text("Scan and confirm a code before saving this alarm.")
                         .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(BobTheme.secondaryText)
                 }
             }
         }
     }
 
     private var fallbackPanel: some View {
-        BobPanel {
+        BobSection {
             Text("For a different kind of morning").font(.headline).accessibilityAddTraits(.isHeader)
             Text("Choose a puzzle fallback now. It's always available if the camera, code, or your body needs a break.")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(BobTheme.secondaryText)
             DifficultyPicker(title: "Puzzle fallback", selection: Binding(
                 get: { draft.challenge.fallback ?? .easy },
                 set: { draft.challenge.fallback = $0 }
@@ -253,7 +250,7 @@ private struct DifficultyPicker: View {
             .accessibilityIdentifier(identifier)
             Text(selection == .easy ? "One small addition problem." : "Three arithmetic problems: multiplication, subtraction, and addition.")
                 .font(.footnote)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(BobTheme.secondaryText)
         }
     }
 }

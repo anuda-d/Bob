@@ -128,14 +128,14 @@ struct PreparationView: View {
 
     private var introduction: some View {
         VStack(alignment: .leading, spacing: 12) {
-            BobPortrait(size: 96)
+            BobPortrait(size: 112, pose: .listening)
             Text(stage == .draft ? "Does this sound like you?" : "What's on your mind for morning?")
                 .font(.title2.bold())
                 .accessibilityAddTraits(.isHeader)
-            Text(stage == .draft
-                 ? "Edit anything. Bob keeps only the plan you confirm."
-                 : "A task, a goal, or a few words. We'll keep this brief.")
-                .foregroundStyle(.secondary)
+            if stage == .draft {
+                Text("Edit anything. Bob keeps only the plan you confirm.")
+                    .foregroundStyle(BobTheme.secondaryText)
+            }
             if let availability = model.modelAvailability, stage != .draft {
                 BobNotice(title: "Make a plan in your own words", message: availability, symbol: "character.cursor.ibeam")
             }
@@ -143,7 +143,7 @@ struct PreparationView: View {
     }
 
     private var intentionEditor: some View {
-        BobPanel {
+        BobSection {
             if stage == .clarification {
                 Text(clarification)
                     .font(.headline)
@@ -168,9 +168,6 @@ struct PreparationView: View {
                 .buttonStyle(BobButtonStyle())
                 .disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSending || model.isBusy)
                 .accessibilityIdentifier("plan.send")
-                Text("Drafted on this iPhone. You get the final say.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
             Button(action: makeManualDraft) {
                 Text(model.modelAvailability == nil ? "Write my plan manually" : "Write my plan")
@@ -183,11 +180,11 @@ struct PreparationView: View {
 
     private var draftEditor: some View {
         VStack(alignment: .leading, spacing: 20) {
-            BobPanel {
+            BobSection {
                 Text("Morning steps").font(.headline)
                 Text("One step per line. Small and specific is plenty.")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(BobTheme.secondaryText)
                 TextField("Add your first step", text: $stepsText, axis: .vertical)
                     .lineLimit(4...14)
                     .textInputAutocapitalization(.sentences)
@@ -204,11 +201,11 @@ struct PreparationView: View {
                     .accessibilityLabel("Why it matters, optional")
                     .accessibilityIdentifier("plan.reason")
             }
-            BobPanel {
+            BobSection {
                 Label("Your alarm", systemImage: "alarm").font(.headline)
                 Text("\(BobCopy.time(model.settings).formatted(date: .omitted, time: .shortened)) · \(BobCopy.repeatDays(model.settings.weekdays))")
-                Text(BobCopy.challenge(model.settings.challenge.kind)).foregroundStyle(.secondary)
-                Text(BobCopy.challengeDetail(model.settings.challenge)).font(.footnote).foregroundStyle(.secondary)
+                Text(BobCopy.challenge(model.settings.challenge.kind)).foregroundStyle(BobTheme.secondaryText)
+                Text(BobCopy.challengeDetail(model.settings.challenge)).font(.footnote).foregroundStyle(BobTheme.secondaryText)
                 if !model.settings.enabled {
                     Text("Your alarm is off. You can still save this plan, then turn on the alarm in Settings.")
                         .font(.footnote)
@@ -218,7 +215,7 @@ struct PreparationView: View {
             }
             Text("Confirming saves this plan on your iPhone. Completing a wake-up challenge won't check off these steps.")
                 .font(.footnote)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(BobTheme.secondaryText)
             Button("Keep editing manually") { focusedField = .steps }
                 .frame(minHeight: 44)
                 .accessibilityIdentifier("plan.manual")
@@ -244,14 +241,11 @@ struct PreparationView: View {
 
     private func confirmation(_ plan: MorningPlan) -> some View {
         VStack(alignment: .leading, spacing: 20) {
-            BobPortrait(size: 160).frame(maxWidth: .infinity)
+            BobPortrait(size: 180, pose: .pleased).frame(maxWidth: .infinity)
             Text("Tucked away.").font(.largeTitle.bold()).accessibilityAddTraits(.isHeader)
-            Text("Your plan is saved. I'll leave you to the quiet.")
-                .font(.title3)
-                .foregroundStyle(.secondary)
             PlanCard(plan: plan, compact: false)
             if !model.alarmReady || !model.settings.enabled {
-                BobPanel {
+                BobSection {
                     BobNotice(title: "Your plan is saved; check your alarm",
                               message: model.settings.enabled ? model.alarmStatus : "Your alarm is currently off. Turn it on from the home screen's alarm settings.",
                               symbol: "alarm")

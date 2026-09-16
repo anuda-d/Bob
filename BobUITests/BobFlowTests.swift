@@ -42,6 +42,11 @@ final class BobFlowTests: XCTestCase {
         capture(app, "plan-editor-large-text")
         app.buttons["plan.confirm"].tap()
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Open my notebook")).firstMatch.waitForExistence(timeout: 5))
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.staticTexts["home.wakeTime"].waitForExistence(timeout: 5))
+        capture(app, "home-large-text")
+        bringIntoView(app.buttons["home.prepare"], in: app)
+        XCTAssertTrue(app.buttons["home.prepare"].isHittable)
     }
 
     func testNativeAlarmKitCanScheduleAndRemoveAnAlarm() throws {
@@ -67,12 +72,12 @@ final class BobFlowTests: XCTestCase {
         }
         XCTAssertTrue(app.buttons["plan.manual"].waitForExistence(timeout: 15))
         app.buttons["Close"].tap()
-        let ready = app.descendants(matching: .any).matching(identifier: "alarm.readiness").firstMatch
-        XCTAssertTrue(ready.waitForExistence(timeout: 10))
-        XCTAssertTrue(ready.label.contains("Alarm ready"), ready.label)
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'Every day'")).firstMatch.exists)
         capture(app, "native-alarm-ready")
         app.buttons["home.settings"].tap()
+        let ready = app.descendants(matching: .any).matching(identifier: "alarm.readiness").firstMatch
+        XCTAssertTrue(ready.waitForExistence(timeout: 10))
+        XCTAssertTrue(ready.label.contains("Alarm ready"), ready.label)
         app.switches["alarm.enabled"].tap()
         app.buttons["alarm.save"].tap()
         XCTAssertTrue(app.staticTexts["Alarm is off"].waitForExistence(timeout: 10))
@@ -92,6 +97,7 @@ final class BobFlowTests: XCTestCase {
         app.buttons["alarm.save"].tap()
         XCTAssertTrue(app.buttons["plan.manual"].waitForExistence(timeout: 5))
         app.buttons["Close"].tap()
+        capture(app, "home-empty-dark")
         app.buttons["home.rehearsal"].tap()
         XCTAssertTrue(app.buttons["morning.silence"].waitForExistence(timeout: 5))
         app.buttons["morning.silence"].tap()
@@ -168,6 +174,22 @@ final class BobFlowTests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Draft the proposal introduction")).firstMatch.waitForExistence(timeout: 5))
         capture(app, "home-light")
+        try app.performAccessibilityAudit(for: [.contrast, .textClipped, .hitRegion, .sufficientElementDescription])
+        XCTAssertTrue(app.buttons["home.prepare"].isHittable)
+        XCTAssertFalse(app.staticTexts["A little less\nto carry."].exists)
+        XCTAssertFalse(app.staticTexts["Bob can hold the morning plan."].exists)
+        XCTAssertFalse(app.staticTexts["A short plan. Then some quiet."].exists)
+        XCTAssertTrue(app.staticTexts["plan.confirmedDate"].exists)
+        app.terminate()
+        app.launchArguments = ["--uitesting", "--dark-mode"]
+        app.launch()
+        XCTAssertTrue(app.staticTexts["home.wakeTime"].waitForExistence(timeout: 5))
+        capture(app, "home-dark")
+        try app.performAccessibilityAudit(for: [.contrast, .textClipped, .hitRegion, .sufficientElementDescription])
+        app.terminate()
+        app.launchArguments = ["--uitesting"]
+        app.launch()
+        XCTAssertTrue(app.buttons["home.rehearsal"].waitForExistence(timeout: 5))
         app.buttons["home.rehearsal"].tap()
         app.buttons["morning.start"].tap()
         let answer = app.textFields["morning.answer"]

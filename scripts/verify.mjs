@@ -30,6 +30,17 @@ if (mode === 'build' || mode === 'device-build') {
   const platform = mode === 'build' ? 'iphonesimulator' : 'iphoneos';
   const bundleInfo = JSON.parse(run('plutil', ['-convert', 'json', '-o', '-', `build/DerivedData/Build/Products/Debug-${platform}/Bob.app/Info.plist`], `${mode}-bundle-info`));
   assert.deepEqual(bundleInfo.UIDeviceFamily, [1], 'The built app must target iPhone only.');
+  const artwork = JSON.parse(run('xcrun', ['assetutil', '--info', `build/DerivedData/Build/Products/Debug-${platform}/Bob.app/Assets.car`], `${mode}-artwork`));
+  function verifyPoses(entries) {
+    const names = new Set(entries.map(entry => entry.Name));
+    for (const pose of ['BobResting', 'BobListening', 'BobPleased']) {
+      assert(names.has(pose), `The built app is missing its ${pose} illustration.`);
+      assert(entries.filter(entry => entry.Name === pose).every(entry => entry.Opaque === false),
+        `${pose} must have a transparent background.`);
+    }
+  }
+  assert.throws(() => verifyPoses([{ Name: 'Bob' }]), 'The old mascot alone must not satisfy the artwork check.');
+  verifyPoses(artwork);
   console.log(mode === 'build' ? 'BOB BUILD VERIFIED' : 'BOB DEVICE BUILD VERIFIED');
 } else if (mode === 'ui') {
   const inventory = JSON.parse(run('xcrun', ['simctl', 'list', 'devices', 'available', '-j'], 'simulators'));

@@ -34,7 +34,7 @@ struct CameraCaptureView: View {
             }
             Text("Processed on this iPhone. Camera footage isn't saved.")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(BobTheme.secondaryText)
         }
         .onAppear {
             isMounted = true
@@ -120,8 +120,8 @@ struct QRRegistrationView: View {
                     .font(.title2.bold())
                     .accessibilityAddTraits(.isHeader)
                 Text("Point the camera at the QR code you want Bob to recognize. The code stays on your iPhone.")
-                    .foregroundStyle(.secondary)
-                BobPanel {
+                    .foregroundStyle(BobTheme.secondaryText)
+                BobSection {
                     if let code = capturedCode {
                         BobNotice(title: "Code captured", message: "Use this same code for your morning challenge.",
                                   symbol: "checkmark.circle")
@@ -141,7 +141,7 @@ struct QRRegistrationView: View {
                         })
                         Text("If the camera is unavailable, go back and choose a puzzle. You can register a QR code later.")
                             .font(.footnote)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(BobTheme.secondaryText)
                     }
                 }
             }

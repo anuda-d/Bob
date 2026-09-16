@@ -106,19 +106,17 @@ private struct MorningOccurrenceView: View {
 
     private var introduction: some View {
         VStack(alignment: .leading, spacing: 12) {
-            BobPortrait(size: 104)
+            BobPortrait(size: 112, pose: .listening)
             Text("Morning, human.").font(.largeTitle.bold()).accessibilityAddTraits(.isHeader)
             if let plan = occurrence.plan, !plan.reason.isEmpty {
-                Text(plan.reason).font(.title3).foregroundStyle(.secondary)
+                Text(plan.reason).font(.title3).foregroundStyle(BobTheme.secondaryText)
             } else if let first = occurrence.plan?.steps.first {
-                Text("You wanted to begin with: \(first)").font(.title3).foregroundStyle(.secondary)
-            } else {
-                Text("One small start. I'll be here.").font(.title3).foregroundStyle(.secondary)
+                Text("You wanted to begin with: \(first)").font(.title3).foregroundStyle(BobTheme.secondaryText)
             }
             if let plan = occurrence.plan {
                 Text("From your plan confirmed \(plan.confirmedAt.formatted(date: .abbreviated, time: .shortened))")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(BobTheme.secondaryText)
             }
         }
     }
@@ -126,7 +124,7 @@ private struct MorningOccurrenceView: View {
     private var deadlineNotice: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             if context.date >= occurrence.audibleDeadline {
-                BobPanel {
+                BobSection {
                     BobNotice(title: "Retry window ended",
                               message: "No new retries are scheduled after 15 minutes. An existing system alert may still need silencing outside Bob. This challenge is incomplete; you can still finish it.",
                               symbol: "bell.slash")
@@ -138,7 +136,7 @@ private struct MorningOccurrenceView: View {
 
     private var soundPanel: some View {
         DisclosureGroup {
-            BobPanel {
+            BobSection {
                     BobNotice(title: "Sound and challenge are separate",
                               message: "Silence the sound and keep going. Inactivity can bring another ring. No new retries are scheduled after \(occurrence.audibleDeadline.formatted(date: .omitted, time: .shortened)); an existing system alert may need silencing.",
                               symbol: "bell")
@@ -165,12 +163,12 @@ private struct MorningOccurrenceView: View {
             .disabled(isSilencing)
             .accessibilityIdentifier("morning.silence")
             .accessibilityHint("Stops the current sound. Your challenge remains incomplete.")
-            Text("Your challenge stays open.").font(.caption).foregroundStyle(.secondary)
+            Text("Your challenge stays open.").font(.caption).foregroundStyle(BobTheme.secondaryText)
         }
     }
 
     private var challengePanel: some View {
-        BobPanel {
+        BobSection {
             Label(occurrence.usingFallback ? "Your puzzle fallback" : BobCopy.challenge(occurrence.effectiveChallenge),
                   systemImage: BobCopy.symbol(occurrence.effectiveChallenge))
                 .font(.title3.bold())
@@ -186,7 +184,7 @@ private struct MorningOccurrenceView: View {
                 case .qr: qr
                 }
             } else {
-                Text(startDescription).foregroundStyle(.secondary)
+                Text(startDescription).foregroundStyle(BobTheme.secondaryText)
                 if occurrence.verifiedSeconds > 0 { activityProgress }
                 Button(action: start) {
                     BusyLabel(title: isStarting ? "Getting ready…" : "Start challenge", busy: isStarting)
@@ -236,7 +234,7 @@ private struct MorningOccurrenceView: View {
             if let problem = occurrence.puzzle.currentProblem {
                 Text("Problem \(occurrence.puzzle.solvedCount + 1) of \(occurrence.puzzle.problems.count)")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(BobTheme.secondaryText)
                 Text(problem.prompt)
                     .font(.largeTitle.bold())
                     .fixedSize(horizontal: false, vertical: true)
@@ -269,7 +267,7 @@ private struct MorningOccurrenceView: View {
                 .accessibilityIdentifier("morning.submit")
                 Text("You have four minutes to think after starting or submitting an answer. Simply leaving the screen open doesn't extend it.")
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(BobTheme.secondaryText)
             } else {
                 BobNotice(title: "The puzzle isn't ready", message: "Your challenge is still open. Try loading it again.", symbol: "puzzlepiece.extension")
                 Button("Load puzzle", action: start)
@@ -285,7 +283,7 @@ private struct MorningOccurrenceView: View {
             activityProgress
             Text("Full body in view, side on. Move at your own pace.")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(BobTheme.secondaryText)
             CameraCaptureView(mode: .pushups, onActivity: { seconds in
                 guard scenePhase == .active else { return }
                 Task {
@@ -309,13 +307,13 @@ private struct MorningOccurrenceView: View {
                 .accessibilityIdentifier("morning.progress")
             Text("Earned time stays, even when tracking pauses.")
                 .font(.footnote)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(BobTheme.secondaryText)
         }
     }
 
     private var qr: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Scan the same code you registered with Bob.").foregroundStyle(.secondary)
+            Text("Scan the same code you registered with Bob.").foregroundStyle(BobTheme.secondaryText)
             if let scanFeedback {
                 Text(scanFeedback).font(.subheadline).accessibilityIdentifier("morning.scanFeedback")
             }
@@ -342,7 +340,7 @@ private struct MorningOccurrenceView: View {
 
     private var completed: some View {
         VStack(alignment: .leading, spacing: 20) {
-            BobPortrait(size: 168).frame(maxWidth: .infinity)
+            BobPortrait(size: 180, pose: .pleased).frame(maxWidth: .infinity)
             Text("You're up. I'm off.")
                 .font(.largeTitle.bold())
                 .accessibilityAddTraits(.isHeader)
@@ -352,7 +350,7 @@ private struct MorningOccurrenceView: View {
                 .font(.title3)
                 .accessibilityIdentifier("morning.completionMethod")
             Text("This challenge is complete. Your morning plan is still yours to begin.")
-                .foregroundStyle(.secondary)
+                .foregroundStyle(BobTheme.secondaryText)
             ModelErrorView(model: model)
             if model.errorMessage != nil {
                 Button("Try silencing alarm") {
@@ -368,7 +366,7 @@ private struct MorningOccurrenceView: View {
                 PlanCard(plan: plan, compact: false)
             } else {
                 Text("No plan was saved for this morning. There's room to make one tonight.")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(BobTheme.secondaryText)
             }
             Button("Back to my day") { model.dismissMorning() }
                 .buttonStyle(BobButtonStyle())

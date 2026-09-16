@@ -3,8 +3,26 @@ import UIKit
 import BobCore
 
 enum BobTheme {
-    static let background = Color(uiColor: .systemGroupedBackground)
-    static let panel = Color(uiColor: .secondarySystemGroupedBackground)
+    static let background = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 0.09, green: 0.12, blue: 0.10, alpha: 1)
+            : UIColor(red: 0.97, green: 0.98, blue: 0.96, alpha: 1)
+    })
+    static let header = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 0.16, green: 0.25, blue: 0.17, alpha: 1)
+            : UIColor(red: 0.78, green: 0.84, blue: 0.71, alpha: 1)
+    })
+    static let onHeader = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 0.94, green: 0.96, blue: 0.91, alpha: 1)
+            : UIColor(red: 0.10, green: 0.18, blue: 0.11, alpha: 1)
+    })
+    static let secondaryText = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 174 / 255, green: 185 / 255, blue: 171 / 255, alpha: 1)
+            : UIColor(red: 82 / 255, green: 97 / 255, blue: 82 / 255, alpha: 1)
+    })
     static let field = Color(uiColor: .tertiarySystemGroupedBackground)
     static let green = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark
@@ -16,8 +34,8 @@ enum BobTheme {
             ? UIColor(red: 0.08, green: 0.14, blue: 0.09, alpha: 1)
             : .white
     })
-    static let panelRadius: CGFloat = 20
-    static let controlRadius: CGFloat = 14
+    // Custom controls are crisp; system sheets, pickers and switches keep native geometry.
+    static let controlRadius: CGFloat = 8
 }
 
 struct BobButtonStyle: ButtonStyle {
@@ -33,8 +51,14 @@ struct BobButtonStyle: ButtonStyle {
             .padding(.vertical, 14)
             .frame(maxWidth: .infinity, minHeight: 50)
             .foregroundStyle(secondary ? BobTheme.green : BobTheme.onGreen)
-            .background(secondary ? BobTheme.green.opacity(0.12) : BobTheme.green,
+            .background(secondary ? Color.clear : BobTheme.green,
                         in: RoundedRectangle(cornerRadius: BobTheme.controlRadius))
+            .overlay {
+                if secondary {
+                    RoundedRectangle(cornerRadius: BobTheme.controlRadius)
+                        .strokeBorder(BobTheme.green.opacity(0.55), lineWidth: 1)
+                }
+            }
             .opacity(isEnabled ? (configuration.isPressed ? 0.82 : 1) : 0.45)
             .scaleEffect(configuration.isPressed && !reduceMotion ? 0.985 : 1)
             .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: configuration.isPressed)
@@ -42,25 +66,34 @@ struct BobButtonStyle: ButtonStyle {
     }
 }
 
-struct BobPanel<Content: View>: View {
+struct BobSection<Content: View>: View {
     @ViewBuilder var content: Content
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) { content }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(20)
-            .background(BobTheme.panel, in: RoundedRectangle(cornerRadius: BobTheme.panelRadius))
+            .padding(.vertical, 16)
+            .overlay(alignment: .top) { Divider() }
     }
+}
+
+enum BobPose: String {
+    case resting = "BobResting"
+    case listening = "BobListening"
+    case pleased = "BobPleased"
 }
 
 struct BobPortrait: View {
     var size: CGFloat = 140
+    var pose: BobPose = .resting
 
     var body: some View {
-        Image("Bob")
+        Image(pose.rawValue)
             .resizable()
             .scaledToFit()
             .frame(width: size, height: size)
+            // Held illustrations switch with app state, without morphs or idle loops.
+            .transaction { $0.animation = nil }
             .accessibilityHidden(true)
     }
 }
@@ -76,7 +109,7 @@ struct BobNotice: View {
                 .font(.headline)
             Text(message)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(BobTheme.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .accessibilityElement(children: .combine)
@@ -88,7 +121,7 @@ struct ModelErrorView: View {
 
     var body: some View {
         if let message = model.errorMessage {
-            BobPanel {
+            BobSection {
                 BobNotice(title: "Something needs attention", message: message,
                           symbol: "exclamationmark.circle")
                 Button("Dismiss message") { model.errorMessage = nil }
@@ -123,7 +156,7 @@ extension View {
     func bobScreen() -> some View {
         frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(BobTheme.background)
-            .fontDesign(.rounded)
+            .fontDesign(.default)
             .tint(BobTheme.green)
             .modifier(TestingAppearance())
     }
