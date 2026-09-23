@@ -6,7 +6,8 @@ It has no backend, external AI service, analytics, or paid entitlement configura
 
 **Status: working local prototype.**
 The initial local validation passed 58 logic tests and four simulator UI flows, plus unsigned simulator and iPhone builds.
-Physical iPhone validation remains pending, and the exact background alarm cutoff has a known platform limitation described below.
+Free Personal Team signing, installation, and launch were verified on an iPhone 17 running iOS 26.6.1 on 2026-09-22.
+Physical alarm and camera validation remain pending, and the exact background alarm cutoff has a known platform limitation described below.
 There is no App Store, TestFlight, or signed release download.
 
 <p>
@@ -70,8 +71,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for focused checks and development conven
 
 ## Limits that still matter
 
-The original MVP is not yet verified on a physical iPhone.
-Free Personal Team signing, real locked/background alarm behavior, actual pushup reliability, and offline Foundation Models conversation quality require the later phone pass.
+The full MVP is not yet verified on a physical iPhone.
+Real locked/background alarm behavior, actual pushup reliability, and systematic offline Foundation Models conversation quality still require the phone validation pass.
 See [the device validation checklist](docs/DEVICE_VALIDATION.md).
 Local suggestions use conservative source extraction for supported phrases.
 Conditions, corrections, and unsupported wording stay verbatim for editing, and every plan requires confirmation.

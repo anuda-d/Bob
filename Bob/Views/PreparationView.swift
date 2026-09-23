@@ -18,6 +18,7 @@ struct PreparationView: View {
     @State private var requestID = UUID()
     @State private var localError: String?
     @State private var confirmedPlan: MorningPlan?
+    @State private var showingReminder = false
 
     private enum Stage { case intent, clarification, draft, confirmed }
     private enum Field: Hashable { case input, steps, reason }
@@ -30,14 +31,21 @@ struct PreparationView: View {
         if !saved.isEmpty {
             switch model.suggestion {
             case .clarification(let question):
-                _stage = State(initialValue: .clarification)
-                _clarification = State(initialValue: question)
+                if question == GroundedSuggestionValidator.reasonQuestion {
+                    _stage = State(initialValue: .draft)
+                    _stepsText = State(initialValue: saved.filter { $0.role == .user }.map(\.text).joined(separator: "\n"))
+                } else {
+                    _stage = State(initialValue: .clarification)
+                    _clarification = State(initialValue: question)
+                }
             case .plan(let steps, let reason):
                 _stage = State(initialValue: .draft)
                 _stepsText = State(initialValue: steps.joined(separator: "\n"))
                 _reason = State(initialValue: reason)
+                _showingReminder = State(initialValue: !reason.isEmpty)
             case nil:
-                if let last = saved.last, last.role == .bob {
+                if let last = saved.last, last.role == .bob,
+                   last.text != GroundedSuggestionValidator.reasonQuestion {
                     _stage = State(initialValue: .clarification)
                     _clarification = State(initialValue: last.text)
                 } else {
@@ -87,7 +95,7 @@ struct PreparationView: View {
         .safeAreaInset(edge: .bottom) {
             if stage == .draft {
                 Button(action: confirm) {
-                    BusyLabel(title: isConfirming ? "Saving your plan…" : "Confirm my plan", busy: isConfirming)
+                    BusyLabel(title: isConfirming ? "Saving your plan…" : "Save for the morning", busy: isConfirming)
                 }
                 .buttonStyle(BobButtonStyle())
                 .disabled(steps.isEmpty || isConfirming || model.isBusy)
@@ -97,7 +105,7 @@ struct PreparationView: View {
             }
         }
         .bobScreen()
-        .navigationTitle(stage == .confirmed ? "Plan tucked away" : "Prepare for the night")
+        .navigationTitle(stage == .confirmed ? "Plan saved" : "Plan your morning")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
@@ -128,12 +136,15 @@ struct PreparationView: View {
 
     private var introduction: some View {
         VStack(alignment: .leading, spacing: 12) {
-            BobPortrait(size: 112, pose: .listening)
-            Text(stage == .draft ? "Does this sound like you?" : "What's on your mind for morning?")
+            BobPortrait(size: 88, pose: .listening)
+            Text(stage == .draft ? "Your plan for morning" : "What do you want to do tomorrow?")
                 .font(.title2.bold())
                 .accessibilityAddTraits(.isHeader)
             if stage == .draft {
-                Text("Edit anything. Bob keeps only the plan you confirm.")
+                Text("Review the steps, then save. Bob will show this plan when your alarm rings.")
+                    .foregroundStyle(BobTheme.secondaryText)
+            } else {
+                Text("Tell Bob what you have in mind. You'll review a short plan before saving it for the morning.")
                     .foregroundStyle(BobTheme.secondaryText)
             }
             if let availability = model.modelAvailability, stage != .draft {
@@ -150,7 +161,7 @@ struct PreparationView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("plan.clarification")
             }
-            Text(stage == .clarification ? "Your answer" : "Your intentions")
+            Text(stage == .clarification ? "Your answer" : "Tomorrow I want to…")
                 .font(.subheadline.weight(.semibold))
             TextField(stage == .clarification ? "A little more detail" : "What would you like to begin?",
                       text: $input, axis: .vertical)
@@ -162,7 +173,7 @@ struct PreparationView: View {
                 .accessibilityIdentifier("plan.input")
             if model.modelAvailability == nil {
                 Button(action: send) {
-                    BusyLabel(title: isSending ? "Bob is thinking…" : (stage == .clarification ? "Send answer" : "Make a draft"),
+                    BusyLabel(title: isSending ? "Preparing your plan…" : (stage == .clarification ? "Review my plan" : "Preview my plan"),
                               busy: isSending)
                 }
                 .buttonStyle(BobButtonStyle())
@@ -170,9 +181,11 @@ struct PreparationView: View {
                 .accessibilityIdentifier("plan.send")
             }
             Button(action: makeManualDraft) {
-                Text(model.modelAvailability == nil ? "Write my plan manually" : "Write my plan")
+                Text(stage == .clarification ? "Skip question and review plan"
+                     : (model.modelAvailability == nil ? "Use my words as the plan" : "Review my plan"))
             }
-            .buttonStyle(BobButtonStyle(secondary: true))
+            .buttonStyle(BobButtonStyle(secondary: model.modelAvailability == nil))
+            .disabled(isSending || model.isBusy)
             .accessibilityIdentifier("plan.manual")
             .accessibilityHint("Opens an editable plan without needing the on-device model.")
         }
@@ -186,26 +199,30 @@ struct PreparationView: View {
                     .font(.subheadline)
                     .foregroundStyle(BobTheme.secondaryText)
                 TextField("Add your first step", text: $stepsText, axis: .vertical)
-                    .lineLimit(4...14)
+                    .lineLimit(2...14)
                     .textInputAutocapitalization(.sentences)
                     .focused($focusedField, equals: .steps)
                     .bobField()
                     .accessibilityLabel("Morning steps, one per line")
                     .accessibilityIdentifier("plan.steps")
-                Text("Why it matters to you (optional)").font(.subheadline.weight(.semibold))
-                TextField("Your reason, in your words", text: $reason, axis: .vertical)
-                    .lineLimit(2...6)
-                    .textInputAutocapitalization(.sentences)
-                    .focused($focusedField, equals: .reason)
-                    .bobField()
-                    .accessibilityLabel("Why it matters, optional")
-                    .accessibilityIdentifier("plan.reason")
+                DisclosureGroup(isExpanded: $showingReminder) {
+                    Text("A sentence you want to read alongside your plan when the alarm rings.")
+                        .font(.subheadline)
+                        .foregroundStyle(BobTheme.secondaryText)
+                    TextField("A reminder to myself", text: $reason, axis: .vertical)
+                        .lineLimit(2...6)
+                        .textInputAutocapitalization(.sentences)
+                        .focused($focusedField, equals: .reason)
+                        .bobField()
+                        .accessibilityLabel("Morning reminder, optional")
+                        .accessibilityIdentifier("plan.reason")
+                } label: {
+                    Text("Add a reminder (optional)").frame(minHeight: 44)
+                }
             }
             BobSection {
                 Label("Your alarm", systemImage: "alarm").font(.headline)
                 Text("\(BobCopy.time(model.settings).formatted(date: .omitted, time: .shortened)) · \(BobCopy.repeatDays(model.settings.weekdays))")
-                Text(BobCopy.challenge(model.settings.challenge.kind)).foregroundStyle(BobTheme.secondaryText)
-                Text(BobCopy.challengeDetail(model.settings.challenge)).font(.footnote).foregroundStyle(BobTheme.secondaryText)
                 if !model.settings.enabled {
                     Text("Your alarm is off. You can still save this plan, then turn on the alarm in Settings.")
                         .font(.footnote)
@@ -213,12 +230,9 @@ struct PreparationView: View {
                     Text(model.alarmStatus).font(.footnote)
                 }
             }
-            Text("Confirming saves this plan on your iPhone. Completing a wake-up challenge won't check off these steps.")
+            Text("Saving this plan doesn't change your alarm.")
                 .font(.footnote)
                 .foregroundStyle(BobTheme.secondaryText)
-            Button("Keep editing manually") { focusedField = .steps }
-                .frame(minHeight: 44)
-                .accessibilityIdentifier("plan.manual")
         }
     }
 
@@ -242,7 +256,7 @@ struct PreparationView: View {
     private func confirmation(_ plan: MorningPlan) -> some View {
         VStack(alignment: .leading, spacing: 20) {
             BobPortrait(size: 180, pose: .pleased).frame(maxWidth: .infinity)
-            Text("Tucked away.").font(.largeTitle.bold()).accessibilityAddTraits(.isHeader)
+            Text("Saved for the morning.").font(.title.bold()).accessibilityAddTraits(.isHeader)
             PlanCard(plan: plan, compact: false)
             if !model.alarmReady || !model.settings.enabled {
                 BobSection {
@@ -305,6 +319,7 @@ struct PreparationView: View {
             case .plan(let suggestedSteps, let suggestedReason):
                 stepsText = suggestedSteps.joined(separator: "\n")
                 reason = suggestedReason
+                showingReminder = !suggestedReason.isEmpty
                 stage = .draft
             case nil:
                 localError = "Bob didn't return a draft. Try again, or write your plan manually."

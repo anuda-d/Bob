@@ -69,8 +69,6 @@ import Observation
                 candidate = .plan(steps: response.content.steps, reason: response.content.reason)
             case .firstStepQuestion:
                 candidate = .clarification(GroundedSuggestionValidator.firstStepQuestion)
-            case .reasonQuestion:
-                candidate = .clarification(GroundedSuggestionValidator.reasonQuestion)
             }
             return validator.validate(candidate)
         } catch is CancellationError {
@@ -99,8 +97,8 @@ import Observation
         Leave reason empty unless the final user message directly answers Bob's exact question
         "Why does this matter to you?". In that case copy that complete answer into reason instead of steps.
         If a necessary first action is unclear, choose kind=firstStepQuestion.
-        Use kind=reasonQuestion only when the user's stated reason itself needs clarification.
-        A missing reason is fine. Ask at most one question, never repeat a question, and never ask after two Bob turns.
+        Never ask why a goal matters or request motivation. A missing reason is fine.
+        Ask at most one first-action question, only if a usable first action is missing.
         For a question, leave steps empty and reason empty. Keep the response brief.
         """
 }
@@ -120,7 +118,6 @@ private struct PromptMessage: Encodable {
 @Generable private enum SuggestionKind {
     case draft
     case firstStepQuestion
-    case reasonQuestion
 }
 
 @available(iOS 26.0, macOS 26.0, *)

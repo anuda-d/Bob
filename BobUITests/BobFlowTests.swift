@@ -4,6 +4,33 @@ import XCTest
 final class BobFlowTests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
 
+    func testAlarmSetupKeepsTimeDaysAndChallengeTogether() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["--uitesting", "--reset-state", "-AppleLocale", "en_US", "-AppleLanguages", "(en)"]
+        app.launch()
+        XCTAssertTrue(app.buttons["welcome.start"].waitForExistence(timeout: 10))
+        app.buttons["welcome.start"].tap()
+        XCTAssertTrue(app.datePickers["alarm.time"].exists, "Use the native, locale-aware time picker.")
+        let wheels = app.datePickers["alarm.time"].pickerWheels
+        wheels.element(boundBy: 0).adjust(toPickerWheelValue: "6")
+        wheels.element(boundBy: 1).adjust(toPickerWheelValue: "30")
+        let monday = app.buttons["alarm.weekday.2"]
+        XCTAssertTrue(monday.isHittable, "Repeating days should be directly reachable on the alarm screen.")
+        monday.tap()
+        XCTAssertTrue(monday.isSelected)
+        XCTAssertTrue(app.buttons["alarm.challenge.puzzle"].isHittable)
+        capture(app, "alarm-setup-before-save")
+        app.buttons["alarm.save"].tap()
+        XCTAssertTrue(app.staticTexts["home.wakeTime"].waitForExistence(timeout: 5),
+                      "Saving an alarm should show the saved alarm, not start another task.")
+        XCTAssertFalse(app.buttons["plan.confirm"].exists)
+        let savedTime = app.staticTexts["home.wakeTime"].value as? String ?? ""
+        XCTAssertTrue(savedTime.contains("6:30") && savedTime.contains("AM"), savedTime)
+        app.buttons["home.settings"].tap()
+        XCTAssertTrue(app.buttons["alarm.weekday.2"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["alarm.weekday.2"].isSelected)
+    }
+
     func testLargeTextSetupRequiresQRRegistration() throws {
         let app = XCUIApplication()
         app.launchArguments = ["--uitesting", "--reset-state", "--large-text"]
@@ -16,20 +43,23 @@ final class BobFlowTests: XCTestCase {
         if !settingsAppeared { capture(app, "settings-did-not-open") }
         XCTAssertTrue(settingsAppeared)
         XCTAssertTrue(app.buttons["alarm.save"].isHittable)
-        XCTAssertGreaterThan(app.staticTexts["Minute"].frame.minY, app.staticTexts["Hour"].frame.maxY,
-                             "Accessibility text must reach the presented settings screen and stack its pickers.")
+        XCTAssertTrue(app.datePickers["alarm.time"].exists)
+        XCTAssertLessThanOrEqual(app.datePickers["alarm.time"].frame.width, app.frame.width)
         capture(app, "alarm-large-text")
-        let picker = app.buttons["alarm.challenge"]
+        let picker = app.buttons["alarm.challenge.qr"]
         bringIntoView(picker, in: app)
         XCTAssertTrue(picker.isHittable)
         picker.tap()
-        app.buttons["QR code"].tap()
         capture(app, "qr-registration-required-large-text")
         XCTAssertFalse(app.buttons["alarm.save"].isEnabled)
-        picker.tap()
-        app.buttons["Puzzle"].tap()
+        let puzzle = app.buttons["alarm.challenge.puzzle"]
+        bringIntoView(puzzle, in: app)
+        puzzle.tap()
         XCTAssertTrue(app.buttons["alarm.save"].isEnabled)
         app.buttons["alarm.save"].tap()
+        XCTAssertTrue(app.buttons["home.prepare"].waitForExistence(timeout: 5))
+        bringIntoView(app.buttons["home.prepare"], in: app)
+        app.buttons["home.prepare"].tap()
         XCTAssertTrue(app.buttons["plan.manual"].waitForExistence(timeout: 5))
         bringIntoView(app.buttons["plan.manual"], in: app)
         app.buttons["plan.manual"].tap()
@@ -56,13 +86,8 @@ final class BobFlowTests: XCTestCase {
         XCTAssertTrue(app.buttons["welcome.start"].waitForExistence(timeout: 10))
         app.buttons["welcome.start"].tap()
         app.buttons["alarm.repeat"].tap()
-        for day in 1...7 {
-            let weekday = app.switches["alarm.weekday.\(day)"]
-            weekday.switches.firstMatch.tap()
-            XCTAssertEqual(weekday.value as? String, "1", "Selected weekday \(day) must stay enabled")
-        }
-        app.navigationBars.buttons.element(boundBy: 0).tap()
-        XCTAssertTrue(app.staticTexts["Every day"].waitForExistence(timeout: 5))
+        app.buttons["Every day"].tap()
+        for day in 1...7 { XCTAssertTrue(app.buttons["alarm.weekday.\(day)"].isSelected) }
         app.buttons["alarm.save"].tap()
         let system = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         if system.alerts.firstMatch.waitForExistence(timeout: 5) {
@@ -70,14 +95,11 @@ final class BobFlowTests: XCTestCase {
             XCTAssertTrue(allow.exists)
             allow.tap()
         }
-        XCTAssertTrue(app.buttons["plan.manual"].waitForExistence(timeout: 15))
-        app.buttons["Close"].tap()
+        XCTAssertTrue(app.staticTexts["Next wake-up"].waitForExistence(timeout: 15))
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'Every day'")).firstMatch.exists)
         capture(app, "native-alarm-ready")
         app.buttons["home.settings"].tap()
-        let ready = app.descendants(matching: .any).matching(identifier: "alarm.readiness").firstMatch
-        XCTAssertTrue(ready.waitForExistence(timeout: 10))
-        XCTAssertTrue(ready.label.contains("Alarm ready"), ready.label)
+        XCTAssertTrue(app.switches["alarm.enabled"].waitForExistence(timeout: 10))
         app.switches["alarm.enabled"].tap()
         app.buttons["alarm.save"].tap()
         XCTAssertTrue(app.staticTexts["Alarm is off"].waitForExistence(timeout: 10))
@@ -90,13 +112,12 @@ final class BobFlowTests: XCTestCase {
         XCTAssertTrue(app.buttons["welcome.start"].waitForExistence(timeout: 10))
         capture(app, "welcome-dark")
         app.buttons["welcome.start"].tap()
-        let picker = app.buttons["alarm.challenge"]
+        let picker = app.buttons["alarm.challenge.pushups"]
         XCTAssertTrue(picker.waitForExistence(timeout: 5))
+        capture(app, "alarm-settings-dark")
         picker.tap()
-        app.buttons["Pushups"].tap()
         app.buttons["alarm.save"].tap()
-        XCTAssertTrue(app.buttons["plan.manual"].waitForExistence(timeout: 5))
-        app.buttons["Close"].tap()
+        XCTAssertTrue(app.staticTexts["home.wakeTime"].waitForExistence(timeout: 5))
         capture(app, "home-empty-dark")
         app.buttons["home.rehearsal"].tap()
         XCTAssertTrue(app.buttons["morning.silence"].waitForExistence(timeout: 5))
@@ -159,6 +180,8 @@ final class BobFlowTests: XCTestCase {
         XCTAssertTrue(save.waitForExistence(timeout: 5))
         capture(app, "alarm-settings-light")
         save.tap()
+        XCTAssertTrue(app.buttons["home.prepare"].waitForExistence(timeout: 5))
+        app.buttons["home.prepare"].tap()
         XCTAssertTrue(app.buttons["plan.manual"].waitForExistence(timeout: 5))
         app.buttons["plan.manual"].tap()
         let steps = app.descendants(matching: .any).matching(identifier: "plan.steps").firstMatch
@@ -166,6 +189,12 @@ final class BobFlowTests: XCTestCase {
         steps.tap()
         steps.typeText("Draft the proposal introduction")
         if app.buttons["Done typing"].exists { app.buttons["Done typing"].tap() }
+        app.buttons["Close"].tap()
+        XCTAssertTrue(app.staticTexts["No morning plan yet"].waitForExistence(timeout: 5),
+                      "Reviewing or closing a draft must not replace the saved morning plan.")
+        app.buttons["home.prepare"].tap()
+        XCTAssertTrue(app.buttons["plan.confirm"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.buttons["plan.confirm"].label, "Save for the morning")
         app.buttons["plan.confirm"].tap()
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Draft the proposal introduction")).firstMatch.waitForExistence(timeout: 5))
         capture(app, "plan-confirmed-light")

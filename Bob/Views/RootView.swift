@@ -6,7 +6,6 @@ struct RootView: View {
     let model: AppModel
     @Environment(\.scenePhase) private var scenePhase
     @State private var sheet: HomeSheet?
-    @State private var prepareAfterSetup = false
 
     private enum HomeSheet: String, Identifiable {
         case alarm, preparation
@@ -31,19 +30,11 @@ struct RootView: View {
             }
         }
         .bobScreen()
-        .sheet(item: $sheet, onDismiss: {
-            if prepareAfterSetup && !model.morningPresented {
-                prepareAfterSetup = false
-                sheet = .preparation
-            }
-        }) { destination in
+        .sheet(item: $sheet) { destination in
             NavigationStack {
                 switch destination {
                 case .alarm:
-                    AlarmSettingsView(model: model) { wasSetup in
-                        prepareAfterSetup = wasSetup
-                        sheet = nil
-                    }
+                    AlarmSettingsView(model: model) { sheet = nil }
                 case .preparation:
                     PreparationView(model: model)
                 }
@@ -56,7 +47,6 @@ struct RootView: View {
         .onChange(of: model.morningPresented) { _, presented in
             if presented {
                 sheet = nil
-                prepareAfterSetup = false
             }
         }
     }

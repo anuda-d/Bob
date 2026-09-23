@@ -41,7 +41,7 @@ struct HomeView: View {
                         }
                     }
                     Button(action: onPrepare) {
-                        Label("Prepare for the night", systemImage: "moon")
+                        Label("Plan my morning", systemImage: "moon")
                     }
                     .buttonStyle(BobButtonStyle())
                     .accessibilityIdentifier("home.prepare")
@@ -89,7 +89,8 @@ struct HomeView: View {
                 && model.occurrence?.settings.id == model.settings.id
                 && (model.occurrence?.scheduledAt ?? .distantFuture) <= context.date
             let alarm = VStack(alignment: .leading, spacing: 12) {
-                Label(!model.settings.enabled ? "Alarm is off" : (oneTimeUsed ? "Your one-time alarm" : "Next wake-up"), systemImage: "alarm")
+                Label(!model.settings.enabled ? "Alarm is off"
+                      : (oneTimeUsed ? "Your one-time alarm" : (model.alarmReady ? "Next wake-up" : "Alarm needs attention")), systemImage: "alarm")
                     .font(.subheadline.weight(.semibold))
                 Text(BobCopy.time(model.settings), format: .dateTime.hour().minute())
                     .font(.system(size: timeSize, weight: .semibold))

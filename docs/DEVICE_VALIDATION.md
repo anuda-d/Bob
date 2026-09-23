@@ -1,6 +1,7 @@
 # Physical iPhone validation
 
-Local building and simulator testing are complete; iPhone installation and hardware validation remain pending.
+Free Personal Team signing, installation, and launch passed on an iPhone 17 running iOS 26.6.1 on 2026-09-22.
+Alarm behavior, camera reliability, and systematic offline planning validation on that phone remain pending.
 This document retains the unverified MVP acceptance requirements rather than treating simulator checks as device evidence.
 
 ## Current platform limitation
@@ -32,7 +33,7 @@ The installed iOS 26.5 SDK AlarmKit interface offers schedule, stop, cancel, pau
 
 Do not purchase a membership or add a fabricated `com.apple.developer.alarmkit` entitlement.
 Apple's documented AlarmKit setup uses `NSAlarmKitUsageDescription` and runtime authorization.
-Actual free-team signing still needs to be validated with this account and phone.
+Free-team signing was verified with the user's account and iPhone on 2026-09-22.
 See [Apple account documentation](https://developer.apple.com/help/account/basics/about-your-developer-account).
 
 ## Alarm and retry scenarios

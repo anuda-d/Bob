@@ -151,8 +151,8 @@ import Testing
         #expect(validator.originalUserInputs == ["  Outline my proposal.\nKeep the morning gentle.  ", "No.\n", " \t "])
     }
 
-    @Test func twoDistinctShortClarificationsCanBeAskedOneAtATime() {
-        let initial: [ConversationMessage] = [.init(role: .user, text: "Work on my proposal.")]
+    @Test func oneNecessaryClarificationIsEnoughBeforeReviewingTheDraft() {
+        let initial: [ConversationMessage] = [.init(role: .user, text: "I don't know where to begin.")]
         let first = PlanSuggestion.clarification("What would you like to do first?")
         #expect(GroundedSuggestionValidator(messages: initial).validate(first) == first)
 
@@ -161,7 +161,24 @@ import Testing
             ConversationMessage(role: .user, text: "Outline the introduction. My reason is hard to describe.")
         ]
         let second = PlanSuggestion.clarification("Why does this matter to you?")
-        #expect(GroundedSuggestionValidator(messages: answered).validate(second) == second)
+        #expect(GroundedSuggestionValidator(messages: answered).validate(second) == .plan(
+            steps: ["I don't know where to begin.", "Outline the introduction. My reason is hard to describe."], reason: ""
+        ))
+    }
+
+    @Test func anOptionalReasonQuestionNeverBlocksAPlan() {
+        let input = "Read a book tomorrow."
+        let validator = GroundedSuggestionValidator(messages: [.init(role: .user, text: input)])
+        #expect(validator.validate(.clarification(GroundedSuggestionValidator.reasonQuestion))
+                == .plan(steps: [input], reason: ""))
+    }
+
+    @Test func aConcretePlanDoesNotNeedAFirstStepQuestion() {
+        let input = "Read a book tomorrow."
+        let validator = GroundedSuggestionValidator(messages: [.init(role: .user, text: input)])
+        #expect(!validator.canClarify)
+        #expect(validator.validate(.clarification(GroundedSuggestionValidator.firstStepQuestion))
+                == .plan(steps: [input], reason: ""))
     }
 
     @Test func aBlankReasonAnswerCannotRemoveTheUsersStep() {

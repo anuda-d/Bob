@@ -69,6 +69,10 @@ Only successful verification advances the challenge.
 
 Root entry point is `RootView(model: AppModel)`.
 Create cohesive native screens: brief welcome, alarm settings with relevant challenge configuration, home with next alarm/readiness and compact plan, night preparation with editable confirmation, morning challenge and completed state.
+Alarm setup uses a native locale-aware time picker, inline weekday buttons with repeat presets, and visible challenge choices.
+Saving an alarm returns home; preparing a plan is a separate action.
+Plan preview and saving are distinct actions, with a final “Save for the morning” button.
+Optional reminder text belongs in the editor and must not trigger a motivation question.
 Use adaptive off-white/forest-charcoal surfaces, a muted green accent, standard system typography, and 8-point custom controls.
 Home and welcome use a sage/forest header; home places the alarm beside Bob and stacks them at larger Dynamic Type sizes.
 Group content with space and section rules, not rounded cards.
@@ -90,7 +94,7 @@ Include an optional Debug-only “Try a morning” action, clearly a rehearsal, 
 
 ## UI testing identifiers
 
-Use stable identifiers at the controls: `welcome.start`, `alarm.save`, `alarm.hour`, `alarm.minute`, `alarm.challenge`, `alarm.difficulty`, `alarm.fallback`, `home.prepare`, `home.settings`, `home.rehearsal`, `plan.input`, `plan.send`, `plan.manual`, `plan.steps`, `plan.reason`, `plan.confirm`, `morning.silence`, `morning.start`, `morning.answer`, `morning.submit`, `morning.fallback`, `morning.done`, `morning.completed`.
+Use stable identifiers at the controls: `welcome.start`, `alarm.save`, `alarm.time`, `alarm.repeat`, `alarm.weekday.<1...7>`, `alarm.challenge.<puzzle|pushups|qr>`, `alarm.difficulty`, `alarm.fallback`, `home.prepare`, `home.settings`, `home.rehearsal`, `plan.input`, `plan.send`, `plan.manual`, `plan.steps`, `plan.reason`, `plan.confirm`, `morning.silence`, `morning.start`, `morning.answer`, `morning.submit`, `morning.fallback`, `morning.done`, `morning.completed`.
 Tests launch with `--uitesting` to isolate storage and avoid OS alarm requests.
 The dedicated native service test also supplies `--real-alarms` to exercise actual AlarmKit scheduling and removes its alarms afterward.
 `--dark-mode` and `--large-text` set deterministic appearance on each presented test surface.

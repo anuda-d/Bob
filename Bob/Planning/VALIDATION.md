@@ -35,7 +35,7 @@ Retain the conversation and original input separately from editable steps and re
 `originalUserInputs` is an independent, lossless snapshot of all user turns, including whitespace.
 `editableDraft` excludes blank-only turns from steps but does not trim or truncate any retained turn.
 `compactDraft` supplies a deterministic, source-derived candidate when the complete conversation fits the bounded grammar; otherwise it returns nil.
-The native planner uses this candidate and supplies it to the model as quoted data.
+The native planner returns a compact candidate immediately without asking the model a redundant question.
 The deterministic `AppModel` UI test fixture uses `editableDraft` and does not exercise actual model inference.
 The validator is for generated suggestions; manual edits are new user choices and belong at the existing explicit confirmation boundary.
 Neither the validator nor the adapter constructs a `MorningPlan`, confirms a plan, writes storage, or completes a broader goal.
@@ -89,9 +89,10 @@ The remaining steps must cover the earlier nonblank user turns in order.
 Even accepted text is reconstructed from the retained source, preserving its original Unicode bytes.
 If a reason cannot be separated safely, the draft keeps all user turns and uses an empty reason field.
 
-Clarifications use two fixed, brief questions: “What would you like to do first?” and “Why does this matter to you?”
-Every Bob turn consumes a slot, including unrecognized historical replies.
-There are at most two slots, repeated questions are rejected, and another question requires a nonblank latest user turn.
+New clarifications use only “What would you like to do first?” when no compact draft is available.
+A usable compact draft goes directly to review, and an optional reason never blocks it.
+At most one question is allowed, with any existing Bob turn consuming that slot.
+The historical reason question remains recognized only for validating existing conversation data.
 The adapter returns `compactDraft ?? editableDraft` without inference when clarification is no longer possible.
 
 ## Native adapter
@@ -99,7 +100,7 @@ The adapter returns `compactDraft ?? editableDraft` without inference when clari
 The adapter explicitly uses `SystemLanguageModel.default` and a fresh `LanguageModelSession` per request.
 It uses an `@Generable` schema, `@Guide`, greedy sampling, temperature zero, and a 1,000-token response limit.
 User and Bob messages, a source-derived candidate, and a compact-mode flag are JSON-encoded as untrusted data beneath static instructions.
-The prompt requests the supplied compact source clauses when available and exact full-source recovery otherwise.
+When inference is necessary, the prompt requests exact full-source recovery or a single first-action question.
 The model helps decide whether a brief clarification is needed; application code establishes the accepted extraction boundary.
 All generated content passes through the public validator before it is returned.
 No network API, cloud model, model tools, paid AI service, or OpenAI dependency is present.
@@ -126,7 +127,7 @@ These checks establish deterministic validator behavior and SDK compatibility, n
 
 ## Pending device task
 
-Actual offline model inference has not been run on a physical iPhone.
+Systematic offline model validation on a physical iPhone remains pending.
 Use the [device checklist](../../docs/DEVICE_VALIDATION.md) for representative and adversarial conversations.
 Check the phone's installed iOS version, Apple Intelligence readiness, downloaded model, and representative planning conversations with internet unavailable.
 Exercise model refusal, context limits, cancellation, availability changes, manual recovery, clarification usefulness, latency, and battery impact on the device.

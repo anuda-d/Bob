@@ -15,12 +15,13 @@ public struct GroundedSuggestionValidator: Sendable {
         messages.filter { $0.role == .user }.map(\.text)
     }
 
-    /// Requires a nonblank user answer and fewer than two Bob turns.
-    /// Every Bob turn consumes a slot, including older, unrecognized questions.
+    /// A clear draft needs no question; otherwise allow one first-action question.
+    /// Existing Bob turns, including legacy reason questions, consume that slot.
     public var canClarify: Bool {
         messages.last?.role == .user
             && messages.last?.text.contains(where: { !$0.isWhitespace }) == true
-            && messages.filter { $0.role == .bob }.count < 2
+            && !messages.contains { $0.role == .bob }
+            && compactDraft == nil
     }
 
     /// Retains all nonblank user turns in order, including corrections and doubts.
@@ -53,7 +54,7 @@ public struct GroundedSuggestionValidator: Sendable {
         if case .clarification(let question) = suggestion {
             guard canClarify,
                   !messages.contains(where: { $0.role == .bob && $0.text == question }),
-                  [Self.firstStepQuestion, Self.reasonQuestion].contains(question) else {
+                  question == Self.firstStepQuestion else {
                 return .plan(steps: userInputs, reason: "")
             }
         }
