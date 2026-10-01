@@ -1,18 +1,18 @@
 # Bob
 
 A native iPhone companion for a short plan before bed and one chosen challenge after waking.
-The app uses SwiftUI, AlarmKit, Vision, AVFoundation, and Apple's on-device Foundation Models.
-It has no backend, external AI service, analytics, or paid entitlement configuration.
+The app uses SwiftUI, AlarmKit, Vision, and AVFoundation.
+It has no AI feature, backend, analytics, or paid entitlement configuration.
 
 **Status: working local prototype.**
-The initial local validation passed 58 logic tests and four simulator UI flows, plus unsigned simulator and iPhone builds.
+The current local validation passed 37 logic tests and six simulator UI flows, plus unsigned simulator and iPhone builds.
 Free Personal Team signing, installation, and launch were verified on an iPhone 17 running iOS 26.6.1 on 2026-09-22.
 Physical alarm and camera validation remain pending, and the exact background alarm cutoff has a known platform limitation described below.
 There is no App Store, TestFlight, or signed release download.
 
 <p>
   <img src="docs/screenshots/welcome-light.png" width="220" alt="Bob's welcome screen with the sleepy green monster" />
-  <img src="docs/screenshots/home-light.png" width="220" alt="Home screen showing the next alarm and saved morning plan" />
+  <img src="docs/screenshots/home-current.png" width="220" alt="Home screen showing the next alarm and saved goals" />
   <img src="docs/screenshots/fallback-completed-dark.png" width="220" alt="Completed easy puzzle fallback in dark appearance" />
 </p>
 
@@ -35,7 +35,7 @@ open Bob.xcodeproj
 
 Choose the Bob scheme and an iPhone simulator, then Run.
 Use the Debug-only **Try a morning** action to rehearse the configured challenge without scheduling or cancelling real alarms.
-The simulator has no real camera and may not have an available on-device language model; manual planning and puzzle fallback remain usable.
+The simulator has no real camera; text planning and puzzle fallback remain usable.
 
 ## Verify
 
@@ -62,8 +62,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for focused checks and development conven
 - One alarm with a wake time, selected repeating days, and one challenge.
 - Twenty seconds of verified pushup activity, an easy one-problem or hard three-problem arithmetic puzzle, or a registered QR code.
 - A preselected puzzle fallback for pushups and QR, available without requiring camera failure.
-- Local text preparation, brief clarification, editable suggestions, explicit plan confirmation, and a manual path.
-- Saved original intentions and dated plans carried into each morning occurrence.
+- One text editor for goals and objectives, saved with Done and shown verbatim on Home.
+- Each saved plan belongs to the next alarm only and remains visible on that day after the wake-up challenge.
 - Silence separately from completion, a two-minute inactivity default, four-minute puzzle thinking allowance, and bounded retry scheduling.
 - Preserved accepted activity and solved puzzle progress across restarts.
 - Actual completion method recorded independently of broader plan steps.
@@ -72,10 +72,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for focused checks and development conven
 ## Limits that still matter
 
 The full MVP is not yet verified on a physical iPhone.
-Real locked/background alarm behavior, actual pushup reliability, and systematic offline Foundation Models conversation quality still require the phone validation pass.
+Real locked/background alarm behavior and actual pushup reliability still require the phone validation pass.
 See [the device validation checklist](docs/DEVICE_VALIDATION.md).
-Local suggestions use conservative source extraction for supported phrases.
-Conditions, corrections, and unsupported wording stay verbatim for editing, and every plan requires confirmation.
+Plan text stays exactly as entered and can be edited before the next alarm.
 
 The exact requirement to stop all audible sound at 15 minutes while Bob is suspended remains a known platform gap.
 The code schedules no new retries after the deadline and stops current sound when executing, but AlarmKit exposes no exact alert-expiration parameter.
@@ -93,10 +92,8 @@ Existing accepted progress and the active plan snapshot are preserved.
 ## Source layout
 
 - `Sources/BobCore`: domain models, alarm occurrence rules, arithmetic, scheduling book, and atomic JSON storage.
-- `Sources/BobPlan`: source-grounded plan suggestion validation.
 - `Bob/Alarms`: AlarmKit adapter and local app intents.
 - `Bob/Camera`: camera capture, QR processing, and deterministic pose detector.
-- `Bob/Planning`: Foundation Models availability and generation.
 - `Bob/Views`: native SwiftUI screens.
 - `Bob/App`: app state, persistence orchestration, and lifecycle.
 - `Tests` and `BobUITests`: public-interface behavior tests and real simulator flows.

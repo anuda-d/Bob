@@ -53,19 +53,20 @@ private struct MorningOccurrenceView: View {
                         completed
                     } else {
                         introduction
-                        ModelErrorView(model: model)
-                        deadlineNotice
-                        challengePanel.id("morning.challenge")
-                        soundPanel
                         if let plan = occurrence.plan {
                             PlanCard(plan: plan)
                         } else {
                             BobNotice(title: "No saved plan for this morning",
                                       message: "You can still finish your challenge. Tonight, leave yourself a few words.", symbol: "text.book.closed")
                         }
+                        ModelErrorView(model: model)
+                        deadlineNotice
+                        challengePanel.id("morning.challenge")
+                        soundPanel
                     }
                 }
                 .padding(20)
+                .padding(.bottom, answerFocused ? 320 : 0)
                 .frame(maxWidth: 600)
                 .frame(maxWidth: .infinity)
             }
@@ -74,6 +75,14 @@ private struct MorningOccurrenceView: View {
             }
             .onChange(of: started) { _, didStart in
                 if didStart { proxy.scrollTo("morning.challenge", anchor: .top) }
+            }
+            .onChange(of: answerFocused) { _, focused in
+                guard focused else { return }
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(250))
+                    guard answerFocused else { return }
+                    proxy.scrollTo("morning.submit", anchor: UnitPoint(x: 0.5, y: 0.28))
+                }
             }
         }
         .scrollDismissesKeyboard(.interactively)
@@ -108,16 +117,6 @@ private struct MorningOccurrenceView: View {
         VStack(alignment: .leading, spacing: 12) {
             BobPortrait(size: 112, pose: .listening)
             Text("Morning, human.").font(.largeTitle.bold()).accessibilityAddTraits(.isHeader)
-            if let plan = occurrence.plan, !plan.reason.isEmpty {
-                Text(plan.reason).font(.title3).foregroundStyle(BobTheme.secondaryText)
-            } else if let first = occurrence.plan?.steps.first {
-                Text("You wanted to begin with: \(first)").font(.title3).foregroundStyle(BobTheme.secondaryText)
-            }
-            if let plan = occurrence.plan {
-                Text("From your plan confirmed \(plan.confirmedAt.formatted(date: .abbreviated, time: .shortened))")
-                    .font(.caption)
-                    .foregroundStyle(BobTheme.secondaryText)
-            }
         }
     }
 
@@ -265,6 +264,7 @@ private struct MorningOccurrenceView: View {
                 .buttonStyle(BobButtonStyle())
                 .disabled(answer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSubmitting || model.isBusy)
                 .accessibilityIdentifier("morning.submit")
+                .id("morning.submit")
                 Text("You have four minutes to think after starting or submitting an answer. Simply leaving the screen open doesn't extend it.")
                     .font(.footnote)
                     .foregroundStyle(BobTheme.secondaryText)
@@ -363,7 +363,7 @@ private struct MorningOccurrenceView: View {
                 .accessibilityIdentifier("morning.silence")
             }
             if let plan = occurrence.plan {
-                PlanCard(plan: plan, compact: false)
+                PlanCard(plan: plan)
             } else {
                 Text("No plan was saved for this morning. There's room to make one tonight.")
                     .foregroundStyle(BobTheme.secondaryText)

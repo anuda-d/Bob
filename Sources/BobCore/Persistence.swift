@@ -10,6 +10,52 @@ public struct BobState: Codable, Equatable, Sendable {
     public var setupComplete = false
     public init() {}
 
+    /// Saves the user's plan verbatim and assigns it to the next future alarm occurrence only.
+    public mutating func savePlan(_ text: String, at now: Date) throws {
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw BobError.invalidPlan }
+        let saved = MorningPlan(originalIntent: text, steps: [text], confirmedAt: now)
+        plan = saved
+        assignToNextOccurrence(saved, at: now)
+    }
+
+    /// Returns the plan on the next future occurrence, or an unconsumed saved plan when
+    /// no occurrence is scheduled yet (for example, while the alarm is disabled).
+    public func nextPlan(at now: Date) -> MorningPlan? {
+        let scheduled = settings.enabled ? occurrences
+            .filter { $0.settings.id == settings.id && $0.scheduledAt > now }
+            .min { $0.scheduledAt < $1.scheduledAt }?
+            .plan : nil
+        if let scheduled { return scheduled }
+        return savedPlanIsUnconsumed(at: now) ? plan : nil
+    }
+
+    /// Returns the upcoming plan, or today's plan after its alarm has fired.
+    public func planForHome(at now: Date, calendar: Calendar = .current) -> MorningPlan? {
+        if settings.enabled,
+           let upcoming = occurrences
+            .filter({ $0.settings.id == settings.id && $0.scheduledAt > now && $0.plan != nil })
+            .min(by: { $0.scheduledAt < $1.scheduledAt })?.plan {
+            return upcoming
+        }
+        if savedPlanIsUnconsumed(at: now), let plan { return plan }
+        return planForToday(at: now, calendar: calendar)
+    }
+
+    /// Returns the plan for an alarm that fired earlier on the current local calendar day.
+    public func planForToday(at now: Date, calendar: Calendar = .current) -> MorningPlan? {
+        occurrences
+            .filter { $0.scheduledAt <= now && $0.plan != nil && calendar.isDate($0.scheduledAt, inSameDayAs: now) }
+            .max { $0.scheduledAt < $1.scheduledAt }?
+            .plan
+    }
+
+    private func savedPlanIsUnconsumed(at now: Date) -> Bool {
+        guard let plan else { return false }
+        return !occurrences.contains { $0.scheduledAt <= now && $0.plan?.id == plan.id }
+    }
+
+    /// Legacy structured confirmation remains decodable and callable by older clients.
+    /// It now assigns the accepted result to one future occurrence, matching the current flow.
     public mutating func confirmPlan(steps: [String], reason: String, at now: Date) throws {
         let cleanSteps = steps.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
         guard !cleanSteps.isEmpty else { throw BobError.invalidPlan }
@@ -17,12 +63,20 @@ public struct BobState: Codable, Equatable, Sendable {
         let confirmed = MorningPlan(originalIntent: source.isEmpty ? cleanSteps.joined(separator: "\n") : source,
                                     steps: cleanSteps, reason: reason.trimmingCharacters(in: .whitespacesAndNewlines),
                                     confirmedAt: now, conversation: conversation)
-        plan = confirmed
+        assignToNextOccurrence(confirmed, at: now)
+        conversation = []
+    }
+
+    private mutating func assignToNextOccurrence(_ replacement: MorningPlan, at now: Date) {
+        plan = replacement
+        let nextID = settings.enabled ? occurrences
+            .filter { $0.settings.id == settings.id && $0.scheduledAt > now }
+            .min { $0.scheduledAt < $1.scheduledAt }?
+            .id : nil
         occurrences = occurrences.map { occurrence in
             guard occurrence.scheduledAt > now else { return occurrence }
-            return occurrence.replacingPlan(confirmed)
+            return occurrence.replacingPlan(occurrence.id == nextID ? replacement : nil)
         }
-        conversation = []
     }
 }
 

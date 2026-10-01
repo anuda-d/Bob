@@ -18,7 +18,7 @@ Do not commit certificates, provisioning profiles, team credentials, build outpu
 
 ## Make changes
 
-Keep alarm state and persistence rules in `Sources/BobCore`, grounded suggestion logic in `Sources/BobPlan`, and camera geometry in `Bob/Camera/Domain`.
+Keep alarm state and persistence rules in `Sources/BobCore` and camera geometry in `Bob/Camera/Domain`.
 Keep framework adapters and SwiftUI views separate from these deterministic rules.
 The app has no external runtime dependencies.
 Adding a service, collecting data, or changing the alarm contract requires an explicit product decision.
@@ -40,12 +40,6 @@ node scripts/verify.mjs build
 node scripts/verify.mjs privacy
 node scripts/verify.mjs device-build
 node scripts/verify.mjs ui
-```
-
-For a focused planning adapter compilation check:
-
-```sh
-sh Tests/BobPlanTests/.support/verify-native.sh
 ```
 
 For illustrated mascot fidelity, install Pillow 12.3 or later in a development Python environment, then run:

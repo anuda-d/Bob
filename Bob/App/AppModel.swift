@@ -1,6 +1,5 @@
 import AlarmKit
 import BobCore
-import BobPlan
 import Foundation
 import Observation
 
@@ -9,7 +8,6 @@ final class AppModel {
     static let shared = AppModel()
     private var state: BobState
     private let store: JSONStore
-    private let planner = LocalPlanner()
     private let alarms = AlarmScheduler()
     private let testing: Bool
     private let usesSystemAlarms: Bool
@@ -24,18 +22,11 @@ final class AppModel {
     var alarmStatus = "Allow alarms so Bob can wake you while the app is closed."
     var errorMessage: String?
     var isBusy = false
-    var suggestion: PlanSuggestion?
-    var modelAvailability: String? { testing ? "Local model unavailable in this simulator test. You can confirm a plan manually." : planner.availabilityMessage }
     var settings: AlarmSettings { state.settings }
-    var plan: MorningPlan? { state.plan }
+    var plan: MorningPlan? { state.planForHome(at: Date()) }
+    var todayPlan: MorningPlan? { state.planForToday(at: Date()) }
+    var planText: String { state.nextPlan(at: Date())?.originalIntent ?? "" }
     var setupComplete: Bool { state.setupComplete }
-    var conversation: [ConversationMessage] {
-        get { state.conversation }
-        set {
-            do { try update { $0.conversation = newValue } }
-            catch { errorMessage = error.localizedDescription }
-        }
-    }
     var occurrence: MorningOccurrence? {
         if rehearsal { return state.practice }
         return state.occurrences.first { $0.id == selectedOccurrenceID }
@@ -73,7 +64,6 @@ final class AppModel {
     }
 
     func refresh() async {
-        planner.refreshAvailability()
         guard !storageFailed else { return }
         do {
             let now = Date()
@@ -148,39 +138,18 @@ final class AppModel {
         _ = await saveAlarm(off)
     }
 
-    func prepare(_ text: String) async {
-        let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty, !isBusy else { return }
+    func savePlan(_ text: String) async -> Bool {
+        guard !isBusy else { return false }
         isBusy = true
         errorMessage = nil
         defer { isBusy = false }
         do {
-            try update { $0.conversation.append(.init(role: .user, text: text)) }
-            let response = testing ? GroundedSuggestionValidator(messages: conversation).editableDraft : try await planner.draft(messages: conversation)
-            suggestion = response
-            if case .clarification(let question) = response {
-                try update { $0.conversation.append(.init(role: .bob, text: question)) }
-            }
+            try update { try $0.savePlan(text, at: Date()) }
+            return true
         } catch {
             errorMessage = error.localizedDescription
-            suggestion = GroundedSuggestionValidator(messages: conversation).editableDraft
+            return false
         }
-    }
-
-    func recordManualIntent(_ text: String) async {
-        let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return }
-        do { try update { $0.conversation.append(.init(role: .user, text: text)) } }
-        catch { errorMessage = error.localizedDescription }
-    }
-
-    func confirmPlan(steps: [String], reason: String) async {
-        guard !isBusy else { return }
-        do {
-            try update { try $0.confirmPlan(steps: steps, reason: reason, at: Date()) }
-            suggestion = nil
-            errorMessage = nil
-        } catch { errorMessage = error.localizedDescription }
     }
 
     private func changeMorning(_ change: (inout MorningOccurrence) throws -> Void) throws {
@@ -277,7 +246,7 @@ final class AppModel {
         do {
             var selected = settings
             if selected.challenge.kind != .puzzle && selected.challenge.fallback == nil { selected.challenge.fallback = .easy }
-            try update { $0.practice = MorningOccurrence(settings: selected, scheduledAt: Date().addingTimeInterval(-2), plan: plan, puzzle: testing ? Self.testPuzzle : nil) }
+            try update { $0.practice = MorningOccurrence(settings: selected, scheduledAt: Date().addingTimeInterval(-2), plan: $0.nextPlan(at: Date()), puzzle: testing ? Self.testPuzzle : nil) }
             rehearsal = true
             morningPresented = true
             lastScannedCode = nil

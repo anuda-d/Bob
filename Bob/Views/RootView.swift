@@ -1,6 +1,5 @@
 import SwiftUI
 import BobCore
-import BobPlan
 
 struct RootView: View {
     let model: AppModel

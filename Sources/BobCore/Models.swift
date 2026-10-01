@@ -79,7 +79,7 @@ public enum BobError: Error, LocalizedError, Equatable {
     public var errorDescription: String? {
         switch self {
         case .invalidSettings(let message): message
-        case .invalidPlan: "Add at least one morning step before confirming your plan."
+        case .invalidPlan: "Enter at least one goal before tapping Done."
         case .unavailableFallback: "This alarm does not have a puzzle fallback."
         case .invalidProgress: "That activity could not be verified. Your earlier progress is safe."
         case .corruptStore: "Bob could not read the saved data. Your original file has been preserved."

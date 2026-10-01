@@ -34,7 +34,7 @@ public struct MorningOccurrence: Codable, Equatable, Identifiable, Sendable {
     public var isComplete: Bool { completedAt != nil }
     public var effectiveChallenge: ChallengeKind { usingFallback ? .puzzle : settings.challenge.kind }
 
-    public func replacingPlan(_ replacement: MorningPlan) -> MorningOccurrence {
+    public func replacingPlan(_ replacement: MorningPlan?) -> MorningOccurrence {
         var result = self
         result.plan = replacement
         return result

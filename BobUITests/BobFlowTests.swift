@@ -60,20 +60,18 @@ final class BobFlowTests: XCTestCase {
         XCTAssertTrue(app.buttons["home.prepare"].waitForExistence(timeout: 5))
         bringIntoView(app.buttons["home.prepare"], in: app)
         app.buttons["home.prepare"].tap()
-        XCTAssertTrue(app.buttons["plan.manual"].waitForExistence(timeout: 5))
-        bringIntoView(app.buttons["plan.manual"], in: app)
-        app.buttons["plan.manual"].tap()
-        let steps = app.descendants(matching: .any).matching(identifier: "plan.steps").firstMatch
-        bringIntoView(steps, in: app)
-        steps.tap()
-        steps.typeText("Open my notebook")
+        let input = app.descendants(matching: .any).matching(identifier: "plan.input").firstMatch
+        XCTAssertTrue(input.waitForExistence(timeout: 5))
+        bringIntoView(input, in: app)
+        input.tap()
+        input.typeText("Open my notebook")
         if app.buttons["Done typing"].exists { app.buttons["Done typing"].tap() }
-        XCTAssertTrue(app.buttons["plan.confirm"].isHittable)
+        XCTAssertTrue(app.buttons["plan.done"].isHittable)
+        XCTAssertTrue(app.buttons["plan.done"].isEnabled)
         capture(app, "plan-editor-large-text")
-        app.buttons["plan.confirm"].tap()
+        app.buttons["plan.done"].tap()
+        XCTAssertTrue(app.staticTexts["home.wakeTime"].waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Open my notebook")).firstMatch.waitForExistence(timeout: 5))
-        app.buttons["Done"].tap()
-        XCTAssertTrue(app.staticTexts["home.wakeTime"].waitForExistence(timeout: 5))
         capture(app, "home-large-text")
         bringIntoView(app.buttons["home.prepare"], in: app)
         XCTAssertTrue(app.buttons["home.prepare"].isHittable)
@@ -142,20 +140,47 @@ final class BobFlowTests: XCTestCase {
         capture(app, "fallback-completed-dark")
     }
 
+    func testPushupChallengeStartsCameraWhenVisible() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["--uitesting", "--reset-state"]
+        app.launch()
+        XCTAssertTrue(app.buttons["welcome.start"].waitForExistence(timeout: 10))
+        app.buttons["welcome.start"].tap()
+        XCTAssertTrue(app.buttons["alarm.challenge.pushups"].waitForExistence(timeout: 10))
+        app.buttons["alarm.challenge.pushups"].tap()
+        app.buttons["alarm.save"].tap()
+        XCTAssertTrue(app.buttons["home.rehearsal"].waitForExistence(timeout: 5))
+        app.buttons["home.rehearsal"].tap()
+        let start = app.buttons["morning.start"]
+        bringIntoView(start, in: app)
+        start.tap()
+        let cameraStarted = NSPredicate { _, _ in
+            let feedback = app.staticTexts["camera.feedback"]
+            return app.buttons["camera.settings"].exists
+                || (feedback.exists && !feedback.label.isEmpty
+                    && !feedback.label.contains("Starting camera")
+                    && !feedback.label.contains("Camera is stopped"))
+        }
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: cameraStarted, object: nil)], timeout: 10), .completed,
+                       "Starting pushups must start the visible camera surface or explain why access is unavailable.")
+        capture(app, "pushup-camera-started")
+        XCTAssertFalse(app.staticTexts["morning.completed"].exists)
+    }
+
     private func bringIntoView(_ element: XCUIElement, in app: XCUIApplication) {
         for _ in 0..<16 {
             let frame = element.frame
             let top = app.frame.height * 0.22
             var bottom = app.frame.height - 50
-            for id in ["alarm.save", "plan.confirm", "morning.silence"] {
+            for id in ["alarm.save", "plan.done", "morning.silence"] {
                 let pinned = app.buttons[id]
                 if pinned.exists && !pinned.frame.isEmpty { bottom = min(bottom, pinned.frame.minY - 12) }
             }
             if element.isHittable && frame.minY >= top && frame.maxY <= bottom { return }
             // Scroll in the left content gutter, away from wheels, scrollbars and pinned actions.
             let above = !frame.isEmpty && frame.minY < top
-            let startY = above ? 0.38 : 0.64
-            let endY = above ? 0.64 : 0.38
+            let startY = above ? 0.38 : min(0.64, max(0.28, (bottom - 24) / app.frame.height))
+            let endY = above ? 0.64 : max(0.14, startY - 0.25)
             app.coordinate(withNormalizedOffset: CGVector(dx: 0.04, dy: startY))
                 .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.04, dy: endY)))
         }
@@ -169,7 +194,7 @@ final class BobFlowTests: XCTestCase {
         attachment.lifetime = .keepAlways
         add(attachment)
     }
-    func testManualPlanSurvivesRelaunchAndPuzzleCompletionKeepsPlan() throws {
+    func testPlanIsOneStepEditableAndSurvivesRelaunchAndChallenge() throws {
         let app = XCUIApplication()
         app.launchArguments = ["--uitesting", "--reset-state"]
         app.launch()
@@ -182,22 +207,24 @@ final class BobFlowTests: XCTestCase {
         save.tap()
         XCTAssertTrue(app.buttons["home.prepare"].waitForExistence(timeout: 5))
         app.buttons["home.prepare"].tap()
-        XCTAssertTrue(app.buttons["plan.manual"].waitForExistence(timeout: 5))
-        app.buttons["plan.manual"].tap()
-        let steps = app.descendants(matching: .any).matching(identifier: "plan.steps").firstMatch
-        XCTAssertTrue(steps.waitForExistence(timeout: 5))
-        steps.tap()
-        steps.typeText("Draft the proposal introduction")
+        let input = app.descendants(matching: .any).matching(identifier: "plan.input").firstMatch
+        XCTAssertTrue(input.waitForExistence(timeout: 5), "Planning should open directly to the goals editor.")
+        XCTAssertFalse(app.buttons["plan.manual"].exists)
+        XCTAssertFalse(app.buttons["plan.send"].exists)
+        XCTAssertFalse(app.buttons["plan.confirm"].exists)
+        input.tap()
+        input.typeText("Draft the proposal introduction")
         if app.buttons["Done typing"].exists { app.buttons["Done typing"].tap() }
-        app.buttons["Close"].tap()
-        XCTAssertTrue(app.staticTexts["No morning plan yet"].waitForExistence(timeout: 5),
-                      "Reviewing or closing a draft must not replace the saved morning plan.")
-        app.buttons["home.prepare"].tap()
-        XCTAssertTrue(app.buttons["plan.confirm"].waitForExistence(timeout: 5))
-        XCTAssertEqual(app.buttons["plan.confirm"].label, "Save for the morning")
-        app.buttons["plan.confirm"].tap()
+        XCTAssertEqual(app.buttons["plan.done"].label, "Done")
+        app.buttons["plan.done"].tap()
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Draft the proposal introduction")).firstMatch.waitForExistence(timeout: 5))
-        capture(app, "plan-confirmed-light")
+        XCTAssertTrue(app.buttons["home.prepare"].exists, "Done should return directly home.")
+        capture(app, "plan-saved-light")
+        app.buttons["home.prepare"].tap()
+        let reopened = app.descendants(matching: .any).matching(identifier: "plan.input").firstMatch
+        XCTAssertTrue(reopened.waitForExistence(timeout: 5))
+        XCTAssertEqual(reopened.value as? String, "Draft the proposal introduction")
+        app.buttons["Close"].tap()
         app.terminate()
         app.launchArguments = ["--uitesting"]
         app.launch()
@@ -208,7 +235,6 @@ final class BobFlowTests: XCTestCase {
         XCTAssertFalse(app.staticTexts["A little less\nto carry."].exists)
         XCTAssertFalse(app.staticTexts["Bob can hold the morning plan."].exists)
         XCTAssertFalse(app.staticTexts["A short plan. Then some quiet."].exists)
-        XCTAssertTrue(app.staticTexts["plan.confirmedDate"].exists)
         app.terminate()
         app.launchArguments = ["--uitesting", "--dark-mode"]
         app.launch()
@@ -226,10 +252,12 @@ final class BobFlowTests: XCTestCase {
         capture(app, "puzzle-light")
         answer.tap()
         answer.typeText("999")
+        bringIntoView(app.buttons["morning.submit"], in: app)
         app.buttons["morning.submit"].tap()
         XCTAssertFalse(app.staticTexts["morning.completed"].exists)
         answer.tap()
         answer.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 3) + "13")
+        bringIntoView(app.buttons["morning.submit"], in: app)
         app.buttons["morning.submit"].tap()
         XCTAssertTrue(app.staticTexts["morning.completed"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Draft the proposal introduction")).firstMatch.exists)

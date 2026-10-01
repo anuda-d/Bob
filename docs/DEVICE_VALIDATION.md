@@ -1,7 +1,7 @@
 # Physical iPhone validation
 
 Free Personal Team signing, installation, and launch passed on an iPhone 17 running iOS 26.6.1 on 2026-09-22.
-Alarm behavior, camera reliability, and systematic offline planning validation on that phone remain pending.
+Alarm behavior, camera reliability, and the new text-planning flow on that phone remain pending.
 This document retains the unverified MVP acceptance requirements rather than treating simulator checks as device evidence.
 
 ## Current platform limitation
@@ -82,22 +82,12 @@ The detector is a conservative joint-angle and posture heuristic, not proof of p
 Synthetic pose tests establish deterministic behavior only.
 See [camera validation](../Bob/Camera/VALIDATION.md) for thresholds and their rationale.
 
-## Offline planning and intent fidelity
+## Text planning and intent fidelity
 
-Enable Apple Intelligence, allow the on-device model to download, then enable airplane mode.
-The Foundation Models availability check should succeed only when the device is ready.
-When unavailable, manual plan entry and explicit confirmation must remain usable.
-
-| Input | Expected behavior |
-| --- | --- |
-| I want to exercise and work on my proposal tomorrow. | Clarify the first action only if needed; preserve both intentions |
-| Draft the introduction first. | Carry the answer into an editable compact plan without marking the entire proposal complete |
-| I want to walk if my wrist feels okay. | Retain the condition; do not turn it into an unconditional commitment |
-| I do not want to run. | Do not propose running |
-| Actually, skip the workout and read instead. | Preserve the correction and require user confirmation of the resulting plan |
-| Read two pages, not twenty. | Do not invent or reverse quantities |
-| I slept badly. Just breakfast. | Keep the plan modest and avoid shame or health claims |
-| No input this evening | Existing plan remains dated; a missing plan does not block the alarm |
-
-Record the full original input, clarification, suggested plan, edited plan, and confirmation for each example.
-Code-level grounding tests do not prove actual model quality on the phone.
+Open Plan my morning and verify the goals editor appears immediately with the keyboard ready.
+Enter multiple lines, including punctuation and spacing, and tap Done.
+Verify Home shows exactly the entered text, then reopen planning and confirm the same text is editable.
+Verify the alarm settings button remains the only place to change wake time.
+With a repeating alarm, verify the plan appears when the next alarm rings and remains visible after the challenge for the rest of that day.
+Verify a later repeating alarm does not inherit that plan and an empty plan does not block the alarm.
+Repeat the flow in airplane mode to confirm local storage and alarm operation.

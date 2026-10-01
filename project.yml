@@ -38,8 +38,6 @@ targets:
     dependencies:
       - package: BobCore
         product: BobCore
-      - package: BobCore
-        product: BobPlan
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.anuda.bob

@@ -1,5 +1,10 @@
 # Local implementation review
 
+The planning flow was simplified after this initial review.
+The current app saves the user's exact text for the next alarm through one editor and no longer includes the AI planner or its tests.
+The planner discussion below records the earlier prototype only.
+The revised flow passed 37 Swift logic tests, six simulator UI tests, privacy verification, and unsigned simulator and iPhone builds on 2026-09-30.
+
 The agreed local deliverable is a buildable native iPhone app with all simulator-testable flows exercised.
 The user's iPhone installation and hardware testing are a later pass.
 The original MVP is not declared complete by local test results.

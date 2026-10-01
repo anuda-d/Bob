@@ -30,14 +30,23 @@ struct HomeView: View {
                         }
                     }
                     Divider()
-                    if let plan = model.plan {
-                        PlanCard(plan: plan)
-                    } else {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("No morning plan yet")
-                                .font(.title3.weight(.semibold))
-                            Text("Add a plan for tomorrow. Your alarm works without one.")
-                                .foregroundStyle(BobTheme.secondaryText)
+                    TimelineView(.periodic(from: .now, by: 60)) { _ in
+                        VStack(alignment: .leading, spacing: 28) {
+                            if let plan = model.plan {
+                                let today = model.todayPlan
+                                PlanCard(plan: plan, title: today?.id == plan.id ? "Today's goals" : "Your morning plan")
+                                if let today, today.id != plan.id {
+                                    Divider()
+                                    PlanCard(plan: today, title: "Today's goals")
+                                }
+                            } else {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("No morning plan yet")
+                                        .font(.title3.weight(.semibold))
+                                    Text("Add your goals whenever you're ready. Your alarm works without a plan.")
+                                        .foregroundStyle(BobTheme.secondaryText)
+                                }
+                            }
                         }
                     }
                     Button(action: onPrepare) {

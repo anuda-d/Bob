@@ -5,15 +5,12 @@ let package = Package(
     name: "BobCore",
     platforms: [.macOS(.v14), .iOS(.v26)],
     products: [
-        .library(name: "BobCore", targets: ["BobCore"]),
-        .library(name: "BobPlan", targets: ["BobPlan"])
+        .library(name: "BobCore", targets: ["BobCore"])
     ],
     targets: [
         .target(name: "BobCore"),
         .testTarget(name: "BobCoreTests", dependencies: ["BobCore"]),
         .target(name: "BobMotion", path: "Bob/Camera/Domain"),
-        .testTarget(name: "BobMotionTests", dependencies: ["BobMotion"]),
-        .target(name: "BobPlan", dependencies: ["BobCore"]),
-        .testTarget(name: "BobPlanTests", dependencies: ["BobPlan", "BobCore"])
+        .testTarget(name: "BobMotionTests", dependencies: ["BobMotion"])
     ]
 )
