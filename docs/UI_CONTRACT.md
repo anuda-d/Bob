@@ -91,7 +91,7 @@ Keep planning available offline.
 Show the exact goals when the alarm rings and for the rest of that day after challenge completion.
 Never mark broad plan steps completed by a challenge.
 Do not show a previous day's plan as if it belongs to a later repeating alarm.
-Include an optional Debug-only “Try a morning” action, clearly a rehearsal, for local user testing.
+Include a small Debug-only “Try a morning” rehearsal control at the bottom right of Home for local user testing.
 
 ## UI testing identifiers
 

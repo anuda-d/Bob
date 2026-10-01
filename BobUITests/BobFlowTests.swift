@@ -75,6 +75,9 @@ final class BobFlowTests: XCTestCase {
         capture(app, "home-large-text")
         bringIntoView(app.buttons["home.prepare"], in: app)
         XCTAssertTrue(app.buttons["home.prepare"].isHittable)
+        let rehearsal = app.buttons["home.rehearsal"]
+        XCTAssertTrue(rehearsal.exists)
+        XCTAssertLessThanOrEqual(rehearsal.frame.maxX, app.frame.maxX - 8)
     }
 
     func testNativeAlarmKitCanScheduleAndRemoveAnAlarm() throws {
@@ -219,6 +222,11 @@ final class BobFlowTests: XCTestCase {
         app.buttons["plan.done"].tap()
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Draft the proposal introduction")).firstMatch.waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["home.prepare"].exists, "Done should return directly home.")
+        let rehearsal = app.buttons["home.rehearsal"]
+        XCTAssertTrue(rehearsal.exists)
+        XCTAssertLessThan(rehearsal.frame.width, app.frame.width * 0.6)
+        XCTAssertGreaterThan(rehearsal.frame.midX, app.frame.width * 0.65)
+        XCTAssertGreaterThan(rehearsal.frame.midY, app.frame.height * 0.8)
         capture(app, "plan-saved-light")
         app.buttons["home.prepare"].tap()
         let reopened = app.descendants(matching: .any).matching(identifier: "plan.input").firstMatch

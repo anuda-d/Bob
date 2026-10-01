@@ -54,22 +54,6 @@ struct HomeView: View {
                     }
                     .buttonStyle(BobButtonStyle())
                     .accessibilityIdentifier("home.prepare")
-                    #if DEBUG
-                    VStack(alignment: .leading, spacing: 4) {
-                        Button {
-                            Task { await model.startPreviewMorning() }
-                        } label: {
-                            Label("Try a morning", systemImage: "sun.horizon")
-                                .frame(minHeight: 44)
-                        }
-                        .disabled(model.isBusy)
-                        .accessibilityIdentifier("home.rehearsal")
-                        Text("Rehearsal using your selected challenge.")
-                            .font(.caption)
-                            .foregroundStyle(BobTheme.secondaryText)
-                    }
-                    .padding(.top, 8)
-                    #endif
                 }
                 .padding(24)
                 .frame(maxWidth: 600)
@@ -77,6 +61,11 @@ struct HomeView: View {
             }
         }
         .bobScreen()
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            #if DEBUG
+            rehearsalButton
+            #endif
+        }
         .navigationTitle("Bob")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(BobTheme.header, for: .navigationBar)
@@ -91,6 +80,36 @@ struct HomeView: View {
             }
         }
     }
+
+    #if DEBUG
+    private var rehearsalButton: some View {
+        HStack {
+            Spacer()
+            Button {
+                Task { await model.startPreviewMorning() }
+            } label: {
+                Label(dynamicTypeSize.isAccessibilitySize ? "Try" : "Try a morning",
+                      systemImage: "sun.horizon")
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(1)
+                    .padding(.horizontal, 14)
+                    .frame(minHeight: 44)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(BobTheme.green)
+            .background(BobTheme.background, in: Capsule())
+            .overlay(Capsule().strokeBorder(BobTheme.green.opacity(0.5), lineWidth: 1))
+            .disabled(model.isBusy)
+            .opacity(model.isBusy ? 0.45 : 1)
+            .accessibilityLabel("Try a morning")
+            .accessibilityIdentifier("home.rehearsal")
+            .accessibilityHint("Rehearses the selected challenge without changing your alarm.")
+        }
+        .padding(.trailing, 20)
+        .padding(.bottom, 12)
+        .background(BobTheme.background)
+    }
+    #endif
 
     private var alarmHeader: some View {
         TimelineView(.periodic(from: .now, by: 60)) { context in
