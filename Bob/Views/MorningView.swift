@@ -116,7 +116,7 @@ private struct MorningOccurrenceView: View {
     private var introduction: some View {
         VStack(alignment: .leading, spacing: 12) {
             BobPortrait(size: 112, pose: .listening)
-            Text("Morning, human.").font(.largeTitle.bold()).accessibilityAddTraits(.isHeader)
+            Text("Good morning.").font(.largeTitle.bold()).accessibilityAddTraits(.isHeader)
         }
     }
 

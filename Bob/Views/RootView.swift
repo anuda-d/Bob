@@ -65,15 +65,9 @@ private struct WelcomeView: View {
                     .background(BobTheme.header.ignoresSafeArea(edges: .top))
                 VStack(alignment: .leading, spacing: 24) {
                     ModelErrorView(model: model)
-                    Text("Meet Bob.")
+                    Text("Meet Bob")
                         .font(.largeTitle.bold())
                         .accessibilityAddTraits(.isHeader)
-                    Text("A plan before bed.\nA challenge when you wake.")
-                        .font(.title3)
-                        .foregroundStyle(BobTheme.secondaryText)
-                    Text("Your plans stay on your iPhone.")
-                        .font(.footnote)
-                        .foregroundStyle(BobTheme.secondaryText)
                 }
                 .padding(24)
                 .frame(maxWidth: 600, alignment: .leading)
@@ -88,9 +82,6 @@ private struct WelcomeView: View {
                 .background(BobTheme.background)
         }
         .bobScreen()
-        .navigationTitle("Bob")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(BobTheme.header, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbar(.hidden, for: .navigationBar)
     }
 }
